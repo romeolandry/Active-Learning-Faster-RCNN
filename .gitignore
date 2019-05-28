@@ -102,9 +102,9 @@ ENV/
 .mypy_cache/
 
 #active_learning_modul
-active_learning_modul/labelIMG/*
+src/labelIMg/*
 todo.md
-active_learning_modul/models/*
+models/*
 
 #vs_code
 AL_config.code-workspace
