@@ -100,3 +100,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+#active_learning_modul
+active_learning_modul/labelIMG/*
+todo.md
+
+#vs_code
+AL_config.code-workspace
+
