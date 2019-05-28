@@ -104,7 +104,7 @@ ENV/
 #active_learning_modul
 active_learning_modul/labelIMG/*
 todo.md
+active_learning_modul/models/*
 
 #vs_code
 AL_config.code-workspace
-
