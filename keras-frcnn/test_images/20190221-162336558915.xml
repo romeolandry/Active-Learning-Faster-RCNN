@@ -1,0 +1,26 @@
+<annotation>
+	<folder>raw_ext</folder>
+	<filename>20190221-162336558915.jpg</filename>
+	<path>/home/kamgo/Donnees/Vierte_Semester/dataset/midrasData/OP_IR_1/data/raw_ext/20190221-162336558915.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>2464</width>
+		<height>2056</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Drohne</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>65</xmin>
+			<ymin>808</ymin>
+			<xmax>2464</xmax>
+			<ymax>2028</ymax>
+		</bndbox>
+	</object>
+</annotation>

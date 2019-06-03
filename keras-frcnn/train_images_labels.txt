@@ -1,0 +1,10 @@
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162247828565.jpg,1091,1084,1440,1380,Drohne
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162722832502.jpg,1186,1146,1416,1331,Drohne
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162622916744.jpg,901,1157,1199,1325,Drohne
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162328440781.jpg,446,638,2010,1482,Drohne
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162500691235.jpg,1101,1102,1403,1325,Drohne
+/home/kamgo/kamgo/Donnees/Vierte_Semester/dataset/midrasData/OP_IR_1/data/raw_ext/20190221-162323366069.jpg,933,810,1548,1219,Drohne
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162936750207.jpg,1046,1123,1550,1306,Drohne
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162515909016.jpg,1112,1121,1406,1353,Drohne
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162912443102.jpg,971,1108,1342,1282,Drohne
+/home/kamgo/midras/keras-frcnn/train_images/20190221-162404983247.jpg,3,2,2464,2050,Drohne
