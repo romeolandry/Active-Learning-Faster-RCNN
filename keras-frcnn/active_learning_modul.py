@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # actives Lernnen mit "Pool-based-Sampling"
 import sys
-sys.path.append("/home/kamgo/midras/keras-frcnn")
+sys.path.append("/home/kamgo/activ_lerning _object_dection/keras-frcnn")
 import train_frcnn as train
 import test_frcnn as test
 from keras import backend as K
@@ -26,10 +26,10 @@ import pickle
 import cv2
 from operator import itemgetter
 
-base_path='/home/kamgo/midras/keras-frcnn'
+base_path='/home/kamgo/activ_lerning _object_dection/keras-frcnn'
 #pathToDataSet='/home/kamgo/midras/keras-frcnn/test_images'
 pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
-pathToSeed = '/home/kamgo/midras/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
+pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
 #pathToSeed =None
 imageType = 'jpg'
 anotationType = 'xml'

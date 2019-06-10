@@ -105,6 +105,19 @@ ENV/
 src/labelIMg/*
 todo.md
 models/*
+pre_train_model/*
+*.txt
 
 #vs_code
 AL_config.code-workspace
+# server File
+*.out
+#Data
+keras-frcnn/train_images
+keras-frcnn/test_images
+data/*
+docs/*
+
+#Model config
+*.pickle
+
