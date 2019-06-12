@@ -7,6 +7,7 @@ import numpy as np
 from optparse import OptionParser
 import pickle
 import os
+import keras
 
 import tensorflow as tf
 from keras import backend as K
@@ -64,14 +65,15 @@ def train_model(all_imgs, classes_count, class_mapping, con):
 
     num_imgs = len(all_imgs)
 
-    train_imgs = [s for s in all_imgs if s['imageset'] == 'train']
+    #train_imgs = [s for s in all_imgs if s['imageset'] == 'train']
+    train_imgs = [s for s in all_imgs if s['imageset'] == 'trainval']
     val_imgs = [s for s in all_imgs if s['imageset'] == 'val']
     test_imgs = [s for s in all_imgs if s['imageset'] == 'test']
-
+    
     print('Num train samples {}'.format(len(train_imgs)))
     print('Num val samples {}'.format(len(val_imgs)))
     print('Num test samples {}'.format(len(test_imgs)))
-
+   
     # groundtruth
     data_gen_train = data_generators.get_anchor_gt(train_imgs, classes_count, con, nn.get_img_output_length, K.image_dim_ordering(), mode='train')
     data_gen_val = data_generators.get_anchor_gt(val_imgs, classes_count, con, nn.get_img_output_length, K.image_dim_ordering(), mode='val')
@@ -276,4 +278,4 @@ def train_model(all_imgs, classes_count, class_mapping, con):
             #     continue
 
     print('Training complete, exiting.')
-    return best_loss
+    return best_loss,con

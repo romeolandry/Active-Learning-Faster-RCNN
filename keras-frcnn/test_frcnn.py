@@ -57,7 +57,17 @@ def get_real_coordinates(ratio, x1, y1, x2, y2):
     real_y2 = int(round(y2 // ratio))
 
     return (real_x1, real_y1, real_x2 ,real_y2)
-def test_model(path,con):
+def test_model(pathtest,con):
+    if con.network == 'resnet50':
+        import keras_frcnn.resnet as nn
+    elif con.network == 'vgg':
+        import keras_frcnn.vgg as nn
+
+    # turn off any data augmentation at test time
+    con.use_horizontal_flips = False
+    con.use_vertical_flips = False
+    con.rot_90 = False
+
     class_mapping = con.class_mapping
 
     if 'bg' not in class_mapping:
@@ -66,7 +76,7 @@ def test_model(path,con):
     class_mapping = {v: k for k, v in class_mapping.items()}
     print(class_mapping)
     class_to_color = {class_mapping[v]: np.random.randint(0, 255, 3) for v in class_mapping}
-    con.num_rois = int(options.num_rois)
+    con.num_rois = int(con.num_rois)
 
     if con.network == 'resnet50':
         num_features = 1024

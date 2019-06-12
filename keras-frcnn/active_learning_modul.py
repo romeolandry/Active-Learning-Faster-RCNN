@@ -28,8 +28,9 @@ from operator import itemgetter
 
 base_path='/home/kamgo/activ_lerning _object_dection/keras-frcnn'
 test_path='/home/kamgo/midras/keras-frcnn/test_images'
+pathToDataSet= '/home/kamgo/VOCdevkit'
 pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
-pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
+#pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder margin"
 batch_size = 50 # batch size for pool based simple
@@ -55,7 +56,7 @@ output_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5')
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras. 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 2
+num_epochs = 1
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
@@ -80,25 +81,15 @@ def train_vorbereitung ():
   
     return con
 
-def Test_model():
-    con = config.Config()
+def Test_model(config):
+    pass
+    """ #con = config.Config()
     #config_output_filename = config_filename
 
-    with open(config_output_filename, 'rb') as f_in:
-        con = pickle.load(f_in)
-
-    if con.network == 'resnet50':
-        import keras_frcnn.resnet as nn
-    elif con.network == 'vgg':
-        import keras_frcnn.vgg as nn
-
-    # turn off any data augmentation at test time
-    con.use_horizontal_flips = False
-    con.use_vertical_flips = False
-    con.rot_90 = False
-    con.class_maping =seed_classes_mapping
-    con.class_count = seed_classes_count
-    return con
+    
+    config.class_maping =seed_classes_mapping
+    config.class_count = seed_classes_count
+    return config """
 
 def make_prediction(unsischerheit_methode,config):
     """es wurde gespeichert: bilder,vorhergesagtete Klasse mit entsprechende 
@@ -107,7 +98,8 @@ def make_prediction(unsischerheit_methode,config):
     list_predicttion_bild_uncert =[]
     
     #load model trainingsmodel
-    model = ResNet50(weights= config.model_path) # model = ResNet50(weights='imagenet')
+    #model = ResNet50(weights= config.model_path) 
+    model = load_model(config.model_path,compile=True)
     # Auflladung des Pfads von Bildern aus Unlabellierte Datamenge
     list_pfad_imgs=[]
     for img in all_imgs:
@@ -194,13 +186,17 @@ if __name__ == "__main__":
     best_loose = 0
     cur_loos = 0
     iteration = 0
+    not_change = 0
+    """ con = train_vorbereitung()
+    predict_list = make_prediction(unsischerheit_methode,con)
+    print(predict_list) """
+
     while (iteration<iteration_zyklus):
         # train
         con = train_vorbereitung() 
-        cur_loos = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con)
-        #test    
-        test_config = Test_model()
-        test = test.test_model(test_path,test_config)
+        cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con)
+        #test
+        test = test.test_model(test_path,config_output_filename,con)
 
         # Anwendung des Models
         predict_list = make_prediction(unsischerheit_methode,config)
@@ -214,12 +210,13 @@ if __name__ == "__main__":
         iteration = iteration + 1
         #Abbruch Krieterium
         if best_loose != cur_loos:
-            if best_loose<cur_loos:
+            if best_loose>=cur_loos:
                 # Verbesserung des Models 
                 print("das Model hat sich verbessert von: {} loos ist jetzt:{}".format(best_loose, cur_loos))
-                loos_not_change-=1
-        
-        if loos_not_change > iteration_zyklus:
+                not_change+=1
+            else:
+                best_loose= cur_loos        
+        if loos_not_change <= not_change:
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(loos_not_change))
-            break      
+            break
         
