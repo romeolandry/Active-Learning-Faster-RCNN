@@ -18,9 +18,10 @@ from keras_frcnn import losses as losses
 import keras_frcnn.roi_helpers as roi_helpers
 from keras.utils import generic_utils
 from keras.callbacks import TensorBoard
+from keras.applications.resnet50 import ResNet50
 
 
-# tensorboard 로그 작성 함수
+# tensorboard
 def write_log(callback, names, logs, batch_no):
     for name, value in zip(names, logs):
         summary = tf.Summary()
@@ -31,9 +32,20 @@ def write_log(callback, names, logs, batch_no):
         callback.writer.flush()
 
 def train_model(all_imgs, classes_count, class_mapping, con):
-    sys.setrecursionlimit(40000)    
-    # parser에서 이미지, 클래스, 클래스 맵핑 정보 가져오기
-    #all_imgs, classes_count, class_mapping = get_data(options.train_path)
+    sys.setrecursionlimit(40000)
+    from keras_frcnn import losses as losses    
+    
+    if con.network == 'vgg':
+        from keras_frcnn import vgg as nn 
+    elif con.network == 'resnet50': 
+        from keras_frcnn import resnet as nn
+    elif con.network == 'xception':
+        from keras_frcnn import xception as nn
+    elif con.network == 'inception_resnet_v2':
+        from keras_frcnn import inception_resnet_v2 as nn
+    else:
+        print('Not a valid model')
+        raise ValueError
 
     # bg 
     if 'bg' not in classes_count:
@@ -70,19 +82,19 @@ def train_model(all_imgs, classes_count, class_mapping, con):
     else:
         input_shape_img = (None, None, 3)
 
-    # input placeholder 정의
+    # input placeholder 
     img_input = Input(shape=input_shape_img)
     roi_input = Input(shape=(None, 4))
 
-    # base network(feature extractor) 정의 (resnet, VGG, Inception, Inception Resnet V2, etc)
+    # base network(feature extractor)(resnet, VGG, Inception, Inception Resnet V2, etc)
     shared_layers = nn.nn_base(img_input, trainable=True)
 
     # define the RPN, built on the base layers
-    # RPN 정의
+    # RPN 
     num_anchors = len(con.anchor_box_scales) * len(con.anchor_box_ratios)
     rpn = nn.rpn(shared_layers, num_anchors)
 
-    # detection network 정의
+    # detection network
     classifier = nn.classifier(shared_layers, roi_input, con.num_rois, nb_classes=len(classes_count), trainable=True)
 
     model_rpn = Model(img_input, rpn[:2])
@@ -90,13 +102,15 @@ def train_model(all_imgs, classes_count, class_mapping, con):
 
     # this is a model that holds both the RPN and the classifier, used to load/save weights for the models
     model_all = Model([img_input, roi_input], rpn[:2] + classifier)
-
     try:
         # load_weights by name
         # some keras application model does not containing name
         # for this kinds of model, we need to re-construct model with naming
         print('loading weights from {}'.format(con.base_net_weights))
         model_rpn.load_weights(con.base_net_weights, by_name=True)
+        #model = ResNet50(weights='imagenet')
+        #model_rpn= ResNet50(weights='imagenet')
+        #model_classifier= ResNet50(weights='imagenet')
         model_classifier.load_weights(con.base_net_weights, by_name=True)
     except:
         print('Could not load pretrained model weights. Weights can be found in the keras application folder \
@@ -108,17 +122,17 @@ def train_model(all_imgs, classes_count, class_mapping, con):
     model_classifier.compile(optimizer=optimizer_classifier, loss=[losses.class_loss_cls, losses.class_loss_regr(len(classes_count)-1)], metrics={'dense_class_{}'.format(len(classes_count)): 'accuracy'})
     model_all.compile(optimizer='sgd', loss='mae')
 
-    # Tensorboard log폴더 생성
+    # Tensorboard log
     log_path = './logs'
     if not os.path.isdir(log_path):
         os.mkdir(log_path)
 
-    # Tensorboard log모델 연결
+    # Tensorboard log
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 1000
-    num_epochs = int(options.num_epochs)
+    epoch_length = 2
+    num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
 
@@ -136,12 +150,12 @@ def train_model(all_imgs, classes_count, class_mapping, con):
 
     for epoch_num in range(num_epochs):
 
-        progbar = generic_utils.Progbar(epoch_length)   # keras progress bar 사용
+        progbar = generic_utils.Progbar(epoch_length)   # keras progress bar 
         print('Epoch {}/{}'.format(epoch_num + 1, num_epochs))
 
         while True:
             # try:
-            # mean overlapping bboxes 출력
+            # mean overlapping bboxes
             if len(rpn_accuracy_rpn_monitor) == epoch_length and con.verbose:
                 mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
                 rpn_accuracy_rpn_monitor = []
@@ -149,7 +163,7 @@ def train_model(all_imgs, classes_count, class_mapping, con):
                 if mean_overlapping_bboxes == 0:
                     print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
 
-            # data generator에서 X, Y, image 가져오기
+            # data generator에서 X, Y, image 
             X, Y, img_data = next(data_gen_train)
 
             loss_rpn = model_rpn.train_on_batch(X, Y)
@@ -262,3 +276,4 @@ def train_model(all_imgs, classes_count, class_mapping, con):
             #     continue
 
     print('Training complete, exiting.')
+    return best_loss

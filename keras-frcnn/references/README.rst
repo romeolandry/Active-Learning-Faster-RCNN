@@ -6,6 +6,17 @@ https://www.pyimagesearch.com/2018/09/10/keras-tutorial-how-to-get-started-with-
 
 Model
 https://github.com/OlafenwaMoses/ImageAI/releases/tag/1.0
+https://github.com/tensorflow/models/tree/master/research/slim#pre-trained-models
 
 keras application
 https://keras.io/applications/#resnet
+
+https://github.com/jinfagang/keras_frcnn
+
+OFFICIEAL resnet
+https://github.com/tensorflow/models/tree/master/official/resnet
+
+https://papers.nips.cc/paper/5638-faster-r-cnn-towards-real-time-object-detection-with-region-proposal-networks.pdf
+
+more about resnet vgg,inception
+https://www.pyimagesearch.com/2017/03/20/imagenet-vggnet-resnet-inception-xception-keras/

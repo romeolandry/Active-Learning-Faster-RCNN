@@ -6,7 +6,7 @@ import sys
 import pickle
 from optparse import OptionParser
 import time
-from keras_frcnn import config
+from keras_frcnn import config, data_generators
 from keras import backend as K
 from keras.layers import Input
 from keras.models import Model
@@ -57,7 +57,7 @@ def get_real_coordinates(ratio, x1, y1, x2, y2):
     real_y2 = int(round(y2 // ratio))
 
     return (real_x1, real_y1, real_x2 ,real_y2)
-def test(path, con):
+def test_model(path,con):
     class_mapping = con.class_mapping
 
     if 'bg' not in class_mapping:
@@ -213,6 +213,6 @@ def test(path, con):
 
         print('Elapsed time = {}'.format(time.time() - st))
         print(all_dets)
-        #cv2.imshow('img', img)
-        #cv2.waitKey(0)
-        cv2.imwrite('./results_imgs/{}.png'.format(idx),img)
+        cv2.imshow('img', img)
+        cv2.waitKey(0)
+        #cv2.imwrite('./results_imgs/{}.png'.format(idx),img)
