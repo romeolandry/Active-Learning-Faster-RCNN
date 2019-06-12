@@ -116,6 +116,7 @@ keras-frcnn/train_images
 keras-frcnn/test_images
 data/*
 docs/*
+logs/*
 test_images.txt
 train_images_txt
 
