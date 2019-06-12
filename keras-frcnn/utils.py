@@ -16,14 +16,14 @@ from operator import itemgetter
 def entropy_sampling(prediction):
     """ Diese Funktion rechnet die Entropie einer Prediction 
         für jedes Bilde wird einen list von Vorgesagtete class und ihre entsprechende Wahrscheinlichkeit
-        [(class,description,prbability),....] 
+        [(class,prbability),....] 
     """
     argmax = 0
     summe = 0
     for elt in prediction:
-        if argmax<elt[2]:
-            argmax=elt[2]
-        summe = summe + np.log10(elt[2])*elt[2]
+        if argmax<elt[1]:
+            argmax=elt[1]
+        summe = summe + np.log10(elt[1])*elt[1]
     
     entropy = argmax-summe
     return entropy
@@ -31,12 +31,12 @@ def entropy_sampling(prediction):
 def least_confident(prediction):
     """ Diese Funktion rechnet die Leas_confidence einer Prediction 
         für jedes Bilde wird einen list von Vorgesagtete class und ihre entsprechende Wahrscheinlichkeit
-        [(class,description,prbability),....] 
+        [(class,prbability),....] 
     """
     argmax = 0
     for elt in prediction:
-        if argmax<elt[2]:
-            argmax=elt[2]
+        if argmax<elt[1]:
+            argmax=elt[1]
     
     lc = 1-argmax
     return lc
@@ -45,9 +45,9 @@ def least_confident(prediction):
 def margin_sampling (prediction):
     """ Diese Funktion rechnet die margin einer Prediction 
         für jedes Bilde wird einen list von Vorgesagtete class und ihre entsprechende Wahrscheinlichkeit
-        [(class,description,prbability),....] 
+        [(class,prbability),....] 
     """
-    prediction=sorted(prediction,key=itemgetter(2),reverse=True)
+    prediction=sorted(prediction,key=itemgetter(1),reverse=True)
     argmax = 0
     mg=0
     mg_list = prediction[:2]
@@ -74,11 +74,11 @@ def berechnung_unsischerheit(prediction, methode):
 def sort_list_sampling(list,sampling_methode):
     print("sortierung nach unsischerheit methode")
     if (sampling_methode=="entropie"):
-        list = sorted(list,key=itemgetter(2),reverse=True)
+        list = sorted(list,key=itemgetter(1),reverse=True)
     elif (sampling_methode=="margin"):
-        list = sorted(list,key=itemgetter(2))
+        list = sorted(list,key=itemgetter(1))
     elif (sampling_methode=="least_confident"):
-        list = sorted(list,key=itemgetter(2),reverse=True)
+        list = sorted(list,key=itemgetter(1),reverse=True)
     else:
         print("kein gültiges Uncertainty sampling")
     

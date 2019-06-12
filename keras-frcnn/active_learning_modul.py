@@ -56,7 +56,7 @@ output_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5')
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras. 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 1
+num_epochs = 2
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
@@ -97,37 +97,22 @@ def make_prediction(unsischerheit_methode,config):
     print("############# Anfang der Vorhersage#########")
     list_predicttion_bild_uncert =[]
     
-    #load model trainingsmodel
-    #model = ResNet50(weights= config.model_path) 
-    model = load_model(config.model_path,compile=True)
-    # Auflladung des Pfads von Bildern aus Unlabellierte Datamenge
     list_pfad_imgs=[]
     for img in all_imgs:
         list_pfad_imgs.append(img['filepath'])
-    i=0
-    for filepath in list_pfad_imgs:
-        img = cv2.imread(filepath)
-        #Bildgrößer an erwartete Bildgrößer anpassen
-        X, ratio = test.format_img(img, con)        
-        if K.image_dim_ordering() == 'tf':
-            X = np.transpose(X, (0, 2, 3, 1))
-
-        # Anwendng des Models auf Unlabellierte Datein
-        preds = model.predict(X)
-        # decode the results into a list of tuples (class, description, probability)
-        prediction = decode_predictions(preds, top=3)[0]
-        #unsischerheit deises prediction wird berechnen
-        print("unsischerheit rechnen")
-        unsischerheit = utils.berechnung_unsischerheit(prediction,unsischerheit_methode)
-        #list_predicttion_bild_uncert.append(filepath,prediction,unsischerheit)
-        pred_class ={}
-        for pre in prediction:
-            pred_class[pre[1]]=pre[2]
         
-        list_predicttion_bild_uncert.append((filepath,pred_class,unsischerheit))            
-        if i>5:
-            break
-        i =i+1
+    for filepath in list_pfad_imgs:      
+        preds = test.make_predicton(filepath,config)
+        print(preds)
+        print("unsischerheit rechnen")
+        unsischerheit = utils.berechnung_unsischerheit(preds,unsischerheit_methode)
+        list_predicttion_bild_uncert.append(filepath,preds,unsischerheit)
+        pred_class ={}
+        for pre in preds:
+            pred_class[pre[0]]=pre[1]
+        
+        list_predicttion_bild_uncert.append((filepath,pred_class,unsischerheit))
+
     print("Ende prediction")
     list_predicttion_bild_uncert = utils.sort_list_sampling(list_predicttion_bild_uncert,unsischerheit_methode)
     return list_predicttion_bild_uncert
@@ -176,10 +161,6 @@ def oracle(prediction_list):
                 all_imgs.remove(el)
     print(to_find)
     
-
-def addNewImageToSeed (seed,newselection):
-    pass
-
 if __name__ == "__main__":
     #Erstellung von Seed und unlabellierte Datenmege
     all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count=utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
@@ -196,9 +177,9 @@ if __name__ == "__main__":
         con = train_vorbereitung() 
         cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con)
         #test
-        test = test.test_model(test_path,con)
+        #test = test.test_model(test_path,con)
         # Anwendung des Models
-        predict_list = make_prediction(unsischerheit_methode,config)
+        predict_list = make_prediction(unsischerheit_methode,con)
         # Query to Oracle
         oracle(predict_list)
         # Transfer von neuen labellierte Daten zu Seed zu trainieren

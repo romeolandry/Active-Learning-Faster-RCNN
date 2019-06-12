@@ -110,9 +110,6 @@ def train_model(all_imgs, classes_count, class_mapping, con):
         # for this kinds of model, we need to re-construct model with naming
         print('loading weights from {}'.format(con.base_net_weights))
         model_rpn.load_weights(con.base_net_weights, by_name=True)
-        #model = ResNet50(weights='imagenet')
-        #model_rpn= ResNet50(weights='imagenet')
-        #model_classifier= ResNet50(weights='imagenet')
         model_classifier.load_weights(con.base_net_weights, by_name=True)
     except:
         print('Could not load pretrained model weights. Weights can be found in the keras application folder \
@@ -133,7 +130,7 @@ def train_model(all_imgs, classes_count, class_mapping, con):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 2
+    epoch_length = 1000
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
