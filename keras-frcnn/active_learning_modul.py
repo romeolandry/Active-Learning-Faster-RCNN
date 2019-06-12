@@ -27,7 +27,7 @@ import cv2
 from operator import itemgetter
 
 base_path='/home/kamgo/activ_lerning _object_dection/keras-frcnn'
-test_path='/home/kamgo/midras/keras-frcnn/test_images'
+test_path='/home/kamgo/test_image'
 pathToDataSet= '/home/kamgo/VOCdevkit'
 pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 #pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
@@ -196,8 +196,7 @@ if __name__ == "__main__":
         con = train_vorbereitung() 
         cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con)
         #test
-        test = test.test_model(test_path,config_output_filename,con)
-
+        test = test.test_model(test_path,con)
         # Anwendung des Models
         predict_list = make_prediction(unsischerheit_methode,config)
         # Query to Oracle
