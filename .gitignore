@@ -111,9 +111,9 @@ pre_train_model/*
 AL_config.code-workspace
 # server File
 *.out
+
 #Data
-keras-frcnn/train_images
-keras-frcnn/test_images
+
 data/*
 docs/*
 logs/*
@@ -122,4 +122,11 @@ train_images_txt
 
 #Model config
 *.pickle
+
+# hdf5
+*.h5
+*.hdf5
+
+#performance
+performance/*
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # actives Lernnen mit "Pool-based-Sampling"
 import sys
-sys.path.append("/home/kamgo/activ_lerning _object_dection/keras-frcnn")
+sys.path.append("/home/kamgo/activ_lerning _object_dection")
 import train_frcnn as train
 import test_frcnn as test
 import utils
@@ -28,7 +28,7 @@ import pickle
 import cv2
 from operator import itemgetter
 
-base_path='/home/kamgo/activ_lerning _object_dection/keras-frcnn'
+base_path='/home/kamgo/activ_lerning _object_dection'
 test_path='/home/kamgo/test_image'
 pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
 pathToDataSet= '/home/kamgo/VOCdevkit'
@@ -46,10 +46,6 @@ seed_classes_mapping={}
 all_imgs =[]
 classes_count ={}
 class_mapping ={}
-
-""" #pathToSeed =None
-imageType = 'jpg'
-anotationType = 'xml' """
 
 # Augmentation flag
 horizontal_flips = True # Augment with horizontal flips in training. 
@@ -85,16 +81,6 @@ def train_vorbereitung ():
         print('Config has been written to {}, and can be loaded when testing to ensure correct results'.format(config_output_filename))
   
     return con
-
-def Test_model(config):
-    pass
-    """ #con = config.Config()
-    #config_output_filename = config_filename
-
-    
-    config.class_maping =seed_classes_mapping
-    config.class_count = seed_classes_count
-    return config """
 
 def make_prediction(unsischerheit_methode,config):
     """es wurde gespeichert: bilder,vorhergesagtete Klasse mit entsprechende 
