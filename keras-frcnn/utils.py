@@ -197,6 +197,7 @@ def Datei_vorbereitung (seed,Dateitype):
     xml_df = pd.DataFrame(xml_list,columns=column_name)
     xml_df.to_csv((basePath +'/'+ Dateitype + '_labels.txt'), index=None, header=False)
     print('Successfully converted xml to txt.')
+
 def Pool_based_sampling_test (listeImage,listscore):
     imagepostclassifier=[]
     column_name = ['path', 'boxes', 'labels', 'score']
@@ -227,5 +228,18 @@ def Pool_based_sampling_test (listeImage,listscore):
     df_imgcls.sort_values(by=['scores'])
     return df_imgcls
 
-if __name__ == "__main__": 
-    pass
+def appendDFToCSV_void(dictPerformance, csvFilePath, sep=","):
+    df = pd.DataFrame(dictPerformance, index=[0])
+    if not os.path.isfile(csvFilePath):
+        df.to_csv(csvFilePath, mode='a', index=False, sep=sep)
+    elif len(df.columns) != len(pd.read_csv(csvFilePath, nrows=1, sep=sep).columns):
+        raise Exception("Columns do not match!! Dataframe has " + str(len(df.columns)) + " columns. CSV file has " + str(len(pd.read_csv(csvFilePath, nrows=1, sep=sep).columns)) + " columns.")
+    elif not (df.columns == pd.read_csv(csvFilePath, nrows=1, sep=sep).columns).all():
+        raise Exception("Columns and column order of dataframe and csv file do not match!!")
+    else:
+        df.to_csv(csvFilePath, mode='a', index=False, sep=sep, header=False)
+
+if __name__ == "__main__":
+    ModellParamdict = {'name': 'landry', 'Accuracy': 90,'TestFehle': 1 - 0.9, 'Parameter': 'param', 'seed': 34, 'Dauert':2899}
+    Perform = pd.DataFrame(ModellParamdict, index=[0])
+    appendDFToCSV_void(Perform,'/home/kamgo/activ_lerning _object_dection/keras-frcnn/performance/performance.csv',",")

@@ -93,3 +93,5 @@ ENV/
 *.hdf5
 #logs
 logs/*
+#performance
+performance/*

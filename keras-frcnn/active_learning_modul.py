@@ -6,6 +6,8 @@ import train_frcnn as train
 import test_frcnn as test
 import utils
 from keras import backend as K
+import time
+from keras.callbacks import TensorBoard
 
 import pandas as pd
 import numpy as np
@@ -27,13 +29,14 @@ import cv2
 from operator import itemgetter
 
 base_path='/home/kamgo/activ_lerning _object_dection/keras-frcnn'
-test_path='/home/kamgo/test_image'
+#test_path='/home/kamgo/test_image'
+pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
 pathToDataSet= '/home/kamgo/VOCdevkit'
 pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 #pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder margin"
-batch_size = 50 # batch size for pool based simple
+batch_size = 300 # batch size for pool based simple
 loos_not_change = 3
 iteration_zyklus = 5
 
@@ -69,11 +72,13 @@ def train_vorbereitung ():
     con.rot_90 = bool(rot_90)
 
     con.model_path = output_weight_path
+    #con.model_path='/home/kamgo/Downloads/vgg16_weights.h5'
     con.num_rois = int(num_rois)
     con.network = network
     con.num_epochs= num_epochs
     # loard weight 
-    con.base_net_weights = base_weight_path
+    #con.base_net_weights = base_weight_path
+    con.base_net_weights ='/home/kamgo/Downloads/resnet50_coco_best_v2.0.1.h5'
 
     with open(config_output_filename, 'wb') as config_f:
         pickle.dump(con, config_f)
@@ -100,7 +105,7 @@ def make_prediction(unsischerheit_methode,config):
     list_pfad_imgs=[]
     for img in all_imgs:
         list_pfad_imgs.append(img['filepath'])
-        
+
     for filepath in list_pfad_imgs:      
         preds = test.make_predicton(filepath,config)
         print(preds)
@@ -174,14 +179,17 @@ if __name__ == "__main__":
 
     while (iteration<iteration_zyklus):
         # train
-        con = train_vorbereitung() 
+        con = train_vorbereitung()
+        start_time = time.time() 
         cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con)
         #test
         #test = test.test_model(test_path,con)
         # Anwendung des Models
         predict_list = make_prediction(unsischerheit_methode,con)
-        # Query to Oracle
+        # Query to Oracle return anzahl des true positive
         oracle(predict_list)
+        performamce ={'Iteration':iteration,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list)}
+        tils.appendDFToCSV_void(performamce,pathToPermformance,";")
         # Transfer von neuen labellierte Daten zu Seed zu trainieren
         if (len(all_imgs)==0):
             print("kein Datei mehr fürs Training")
