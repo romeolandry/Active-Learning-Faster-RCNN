@@ -29,7 +29,7 @@ import cv2
 from operator import itemgetter
 
 base_path='/home/kamgo/activ_lerning _object_dection/keras-frcnn'
-#test_path='/home/kamgo/test_image'
+test_path='/home/kamgo/test_image'
 pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
 pathToDataSet= '/home/kamgo/VOCdevkit'
 pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
@@ -77,8 +77,8 @@ def train_vorbereitung ():
     con.network = network
     con.num_epochs= num_epochs
     # loard weight 
-    #con.base_net_weights = base_weight_path
-    con.base_net_weights ='/home/kamgo/Downloads/resnet50_coco_best_v2.0.1.h5'
+    con.base_net_weights = base_weight_path
+    #con.base_net_weights ='/home/kamgo/Downloads/resnet50_coco_best_v2.0.1.h5'
 
     with open(config_output_filename, 'wb') as config_f:
         pickle.dump(con, config_f)
@@ -99,19 +99,17 @@ def Test_model(config):
 def make_prediction(unsischerheit_methode,config):
     """es wurde gespeichert: bilder,vorhergesagtete Klasse mit entsprechende 
     Wahrscheinlichkeiten, und unsischerheitswert"""
-    print("############# Anfang der Vorhersage#########")
-    list_predicttion_bild_uncert =[]
-    
+    print("############# Anfang der Vorhersage #########")
+    list_predicttion_bild_uncert =[]    
     list_pfad_imgs=[]
     for img in all_imgs:
         list_pfad_imgs.append(img['filepath'])
-
+    #list_pfad_imgs = list_pfad_imgs[:500]
     for filepath in list_pfad_imgs:      
         preds = test.make_predicton(filepath,config)
-        print(preds)
-        print("unsischerheit rechnen")
+        # unsischerheit rechnen 
         unsischerheit = utils.berechnung_unsischerheit(preds,unsischerheit_methode)
-        list_predicttion_bild_uncert.append(filepath,preds,unsischerheit)
+        list_predicttion_bild_uncert.append((filepath,preds,unsischerheit))
         pred_class ={}
         for pre in preds:
             pred_class[pre[0]]=pre[1]
@@ -173,10 +171,16 @@ if __name__ == "__main__":
     cur_loos = 0
     iteration = 0
     not_change = 0
-    """ con = train_vorbereitung()
+    """ # bg 
+    if 'bg' not in classes_count:
+        classes_count['bg'] = 0
+        class_mapping['bg'] = len(class_mapping)
+
+    con.class_mapping = class_mapping """
+    """ #test
+    test = test.test_model(test_path,con)
     predict_list = make_prediction(unsischerheit_methode,con)
     print(predict_list) """
-
     while (iteration<iteration_zyklus):
         # train
         con = train_vorbereitung()
@@ -188,7 +192,7 @@ if __name__ == "__main__":
         predict_list = make_prediction(unsischerheit_methode,con)
         # Query to Oracle return anzahl des true positive
         oracle(predict_list)
-        performamce ={'Iteration':iteration,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list)}
+        performamce ={'unsischerheit_methode':unsischerheit_methode,'Iteration':iteration,'Aktuelle Ungenaueheit':cur_loos,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list)}
         tils.appendDFToCSV_void(performamce,pathToPermformance,";")
         # Transfer von neuen labellierte Daten zu Seed zu trainieren
         if (len(all_imgs)==0):

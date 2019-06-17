@@ -130,7 +130,7 @@ def train_model(all_imgs, classes_count, class_mapping, con):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 10
+    epoch_length = 1000
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0

@@ -226,9 +226,10 @@ def test_model(img_path,con):
         #cv2.imshow('img', img)
         #cv2.waitKey(0)
         cv2.imwrite('./results_imgs/{}.png'.format(idx),img)
-def make_predicton(file_paht,con):
-    print("anwendung des Models")
 
+
+def make_predicton(file_paht,con):
+    #print("anwendung des Models")
     if con.network == 'resnet50':
         import keras_frcnn.resnet as nn
     elif con.network == 'vgg':
@@ -283,7 +284,7 @@ def make_predicton(file_paht,con):
 
     model_classifier = Model([feature_map_input, roi_input], classifier)
 
-    print('Loading weights from {}'.format(con.model_path))
+    #print('Loading weights from {}'.format(con.model_path))
     model_rpn.load_weights(con.model_path, by_name=True)
     model_classifier.load_weights(con.model_path, by_name=True)
 
