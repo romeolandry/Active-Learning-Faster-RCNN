@@ -20,3 +20,6 @@ https://papers.nips.cc/paper/5638-faster-r-cnn-towards-real-time-object-detectio
 
 more about resnet vgg,inception
 https://www.pyimagesearch.com/2017/03/20/imagenet-vggnet-resnet-inception-xception-keras/
+
+pre-trained geloadet model
+https://medium.com/analytics-vidhya/a-practical-implementation-of-the-faster-r-cnn-algorithm-for-object-detection-part-2-with-cac45dada619
