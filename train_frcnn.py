@@ -32,7 +32,7 @@ def write_log(callback, names, logs, batch_no):
         callback.writer.add_summary(summary, batch_no)
         callback.writer.flush()
 
-def train_model(all_imgs, classes_count, class_mapping, con):
+def train_model(seed_data, classes_count, class_mapping, con):
     sys.setrecursionlimit(40000)
     from keras_frcnn import losses as losses    
     
@@ -57,18 +57,17 @@ def train_model(all_imgs, classes_count, class_mapping, con):
 
     inv_map = {v: k for k, v in class_mapping.items()}
 
-    print('Training images per class:')
-    pprint.pprint(classes_count)
-    print('Num classes (including bg) = {}'.format(len(classes_count)))
+    #print('Training images per class:')
+    #pprint.pprint(classes_count)
+    #print('Num classes (including bg) = {}'.format(len(classes_count)))
 
-    random.shuffle(all_imgs)
+    random.shuffle(seed_data)
 
-    num_imgs = len(all_imgs)
-
+    num_imgs = len(seed_data)
     #train_imgs = [s for s in all_imgs if s['imageset'] == 'train']
-    train_imgs = [s for s in all_imgs if s['imageset'] == 'trainval']
-    val_imgs = [s for s in all_imgs if s['imageset'] == 'val']
-    test_imgs = [s for s in all_imgs if s['imageset'] == 'test']
+    train_imgs = [s for s in seed_data if s['imageset'] == 'trainval']
+    val_imgs = [s for s in seed_data if s['imageset'] == 'val']
+    test_imgs = [s for s in seed_data if s['imageset'] == 'test']
     
     print('Num train samples {}'.format(len(train_imgs)))
     print('Num val samples {}'.format(len(val_imgs)))

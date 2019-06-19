@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # actives Lernnen mit "Pool-based-Sampling"
 import sys
-sys.path.append("/home/kamgo/activ_lerning _object_dection")
+import os
+sys.path.append(os.getcwd())
 import train_frcnn as train
 import test_frcnn as test
 import utils
@@ -12,7 +13,6 @@ from keras.callbacks import TensorBoard
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 import glob
 import errno
 import ntpath
@@ -28,22 +28,24 @@ import pickle
 import cv2
 from operator import itemgetter
 
-base_path='/home/kamgo/activ_lerning _object_dection'
-test_path='/home/kamgo/test_image'
+base_path=os.getcwd()
+#test_path='/home/kamgo/test_image'
 pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
 pathToDataSet= '/home/kamgo/VOCdevkit'
-pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
+#pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 #pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
+
 #uncertainty sampling method
-unsischerheit_methode = "entropie" # kann auch "least_confident oder margin"
-batch_size = 300 # batch size for pool based simple
-loos_not_change = 3
-iteration_zyklus = 5
+unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
+batch_size = 200 # batch size for pool based simple
+batch = 50 # Anzahl von daein zu senden to oracle
+loos_not_change = 10 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
 seed_imgs =[]
 seed_classes_count={}
 seed_classes_mapping={}
 all_imgs =[]
+datatosendtoOracle=[]
 classes_count ={}
 class_mapping ={}
 
@@ -55,7 +57,7 @@ output_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5')
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras. 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 2
+num_epochs = 1000
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
@@ -84,108 +86,104 @@ def train_vorbereitung ():
 
 def make_prediction(unsischerheit_methode,config):
     """es wurde gespeichert: bilder,vorhergesagtete Klasse mit entsprechende 
-    Wahrscheinlichkeiten, und unsischerheitswert"""
+    Wahrscheinlichkeiten, und unsischerheitswert: predict über batch-Element"""
     print("############# Anfang der Vorhersage #########")
     list_predicttion_bild_uncert =[]    
     list_pfad_imgs=[]
     for img in all_imgs:
         list_pfad_imgs.append(img['filepath'])
-    #list_pfad_imgs = list_pfad_imgs[:500]
+        
+    print("Anzahl von bildern zu predict:{}".format(len(list_pfad_imgs)))
     for filepath in list_pfad_imgs:      
         preds = test.make_predicton(filepath,config)
+        print(preds)
         # unsischerheit rechnen 
         unsischerheit = utils.berechnung_unsischerheit(preds,unsischerheit_methode)
         list_predicttion_bild_uncert.append((filepath,preds,unsischerheit))
-        pred_class ={}
-        for pre in preds:
-            pred_class[pre[0]]=pre[1]
-        
-        list_predicttion_bild_uncert.append((filepath,pred_class,unsischerheit))
-
-    print("Ende prediction")
-    list_predicttion_bild_uncert = utils.sort_list_sampling(list_predicttion_bild_uncert,unsischerheit_methode)
+      
+    print("Ende der Vorhersage")
     return list_predicttion_bild_uncert
 
-def pool_based_sampling ():
-    """ es wird hier N-Element aus Unlabellierte Datenmenge(all_imgs) nach Seed entfernen
-        die N-größer uncertainty"""
-    print("Erstellung anotation, class_maping und class_count für neue Seed")
-    for seed in seed_imgs:
-        for bb in seed['bboxes']:
-            if bb['class'] not in seed_classes_count:
-                seed_classes_count[bb['class']] = 1
-            else:
-                seed_classes_count[bb['class']] += 1
-            if bb['class'] not in seed_classes_mapping:
-                seed_classes_mapping[bb['class']] = len(seed_classes_mapping)
-    print("Erstellung anotation, class_maping und class_count vom unlabellierte Daten")     
-    for im in all_imgs:
-        for bb in im['bboxes']:
-            if bb['class'] not in classes_count:
-                classes_count[bb['class']] = 1
-            else:
-                classes_count[bb['class']] += 1
-            if bb['class'] not in class_mapping:
-                class_mapping[bb['class']] = len(class_mapping)    
-    return all_imgs, seed_imgs, class_mapping,classes_count,seed_classes_mapping,seed_classes_count
+""" def pool_based_sampling (list_predict,list_image_send_for_predict):
+    
+    neue_seed =[]
+    for el in list_predict:
 
-def oracle(prediction_list):
-    # N-Elements to query to Oracle or User
-    print("Query oracle")
+    
+    return neue_seed """
+
+def oracle(prediction_list,batch_size,uncertainty_m,trainingsmenge):
+    neue_seed =[]
+    print("Query Oracle")
+    # auf basis von Unsischerheit wird die Liste  sortiert
+    prediction_list = utils.sort_list_sampling(prediction_list,uncertainty_m)
+    # die  erste batch-size Element werden rausgenommen
+    # 
+    prediction_list = prediction_list[:batch_size]
     to_find = len(prediction_list)
-    # Einlesen von N-Elementen, die zur Oracle gefragt werden
-    prediction_list= prediction_list[:batch_size]    
+    truePositiv = 0
     for el in all_imgs:
         for pred in prediction_list:
             if ntpath.basename(el['filepath']) == ntpath.basename(pred[0]):
                 to_find=to_find-1
+                neue_seed.append(el)
                 print("________________Vorhergesagtete Klassen für das Bild : {}".format(ntpath.basename(el['filepath'])))
-                for keys,values in pred[1].items():
-                    print('{} {} '.format(keys,values))
-                print('__________Anwort des Oracle____________')
-                for cl in el['bboxes']:
-                    print(cl['class'])
-                # addieren zum Seedsdataset
-                seed_imgs.append(el)
-                all_imgs.remove(el)
-    print(to_find)
-    
+                for val in pred[1]:
+                    print("___________________________________________________________")
+                    print('{} {} '.format(val[0],val[1]))
+                    print('__________Anwort der Oracle____________')
+                    for cl in el['bboxes']:
+                        print(cl['class'])
+                        if cl['class']== val[0]:
+                            print("das model gut predicted!")
+                            truePositiv +=1
+                            
+
+    print("true positive:{}".format(truePositiv))
+    trainingsmenge = trainingsmenge + neue_seed
+    for el in neue_seed:
+        all_imgs.remove(el)
+    print(len(all_imgs))
+    return truePositiv,trainingsmenge
+           
 if __name__ == "__main__":
     #Erstellung von Seed und unlabellierte Datenmege
-    all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count=utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
+    datatosendtoOracle,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count=utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
     best_loose = 0
     cur_loos = 0
     iteration = 0
     not_change = 0
-    """ # bg 
-    if 'bg' not in classes_count:
-        classes_count['bg'] = 0
-        class_mapping['bg'] = len(class_mapping)
-
-    con.class_mapping = class_mapping """
-    """ #test
-    test = test.test_model(test_path,con)
-    predict_list = make_prediction(unsischerheit_methode,con)
-    print(predict_list) """
-    while (iteration<iteration_zyklus):
+    #test    
+    while (len(datatosendtoOracle)!=0):
         # train
+        iteration += 1
         con = train_vorbereitung()
-        start_time = time.time() 
+        start_time = time.time()
+        # Transfer von neuen labellierte Daten zu Seed zu trainieren
+        if len(all_imgs)==0:
+            all_imgs = datatosendtoOracle[:batch]
+            datatosendtoOracle= datatosendtoOracle[batch:]
+        else:
+            all_imgs = all_imgs + datatosendtoOracle[:batch_size]
+            datatosendtoOracle= datatosendtoOracle[batch_size:]
+
+        print("size of train data: {}".format(len(seed_imgs)))
+        print("size of data to predict {}".format(len(all_imgs)))
+        print("size of data reste data {}".format(len(datatosendtoOracle)))
         cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con)
         #test
         #test = test.test_model(test_path,con)
+
         # Anwendung des Models
         predict_list = make_prediction(unsischerheit_methode,con)
-        # Query to Oracle return anzahl des true positive
-        oracle(predict_list)
-        performamce ={'unsischerheit_methode':unsischerheit_methode,'Iteration':iteration,'Aktuelle Ungenaueheit':cur_loos,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list)}
-        tils.appendDFToCSV_void(performamce,pathToPermformance,";")
-        # Transfer von neuen labellierte Daten zu Seed zu trainieren
-        if (len(all_imgs)==0):
-            print("kein Datei mehr fürs Training")
-            break
-        all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count=pool_based_sampling()
-        iteration = iteration + 1
+        # Query to Oracle: zurückgegeben wird anzahl der rictige vorhergesahte Klasse und die neue Trainingsmenge 
+        truepositiv, seed_imgs = oracle(predict_list,batch_size,unsischerheit_methode,seed_imgs)
+        # die batch-size Element, die von der Oracle überprüfen wurden,werden in der trainingsmenge übertragen       
+        #seed_imgs=pool_based_sampling(list_predict_sort,unsischerheit_methode)
+        seed_classes_count,seed_classes_mapping=utils.create_mapping_cls(seed_imgs)      
+        performamce ={'unsischerheit_methode':unsischerheit_methode,'Iteration':iteration,'Aktuelle Ungenaueheit':cur_loos,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Gut predicted':truepositiv}
+        utils.appendDFToCSV_void(performamce,pathToPermformance)
+        
         #Abbruch Krieterium
         if best_loose != cur_loos:
             if best_loose>=cur_loos:
@@ -197,4 +195,3 @@ if __name__ == "__main__":
         if loos_not_change <= not_change:
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(loos_not_change))
             break
-        

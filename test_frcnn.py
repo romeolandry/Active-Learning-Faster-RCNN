@@ -120,9 +120,9 @@ def test_model(img_path,con):
     model_rpn.compile(optimizer='sgd', loss='mse')
     model_classifier.compile(optimizer='sgd', loss='mse')
 
-    all_imgs = []
+    #all_imgs = []
 
-    classes = {}
+    #classes = {}
 
     bbox_threshold = 0.8
 
@@ -174,8 +174,8 @@ def test_model(img_path,con):
 
             for ii in range(P_cls.shape[1]):
 
-                if np.max(P_cls[0, ii, :]) < bbox_threshold or np.argmax(P_cls[0, ii, :]) == (P_cls.shape[2] - 1):
-                    continue
+                #if np.max(P_cls[0, ii, :]) < bbox_threshold or np.argmax(P_cls[0, ii, :]) == (P_cls.shape[2] - 1):
+                    #continue
 
                 cls_name = class_mapping[np.argmax(P_cls[0, ii, :])]
 
@@ -227,9 +227,8 @@ def test_model(img_path,con):
         #cv2.waitKey(0)
         cv2.imwrite('./results_imgs/{}.png'.format(idx),img)
 
-
 def make_predicton(file_paht,con):
-    #print("anwendung des Models")
+    print(file_paht)
     if con.network == 'resnet50':
         import keras_frcnn.resnet as nn
     elif con.network == 'vgg':
@@ -291,10 +290,6 @@ def make_predicton(file_paht,con):
     model_rpn.compile(optimizer='sgd', loss='mse')
     model_classifier.compile(optimizer='sgd', loss='mse')
 
-    all_imgs = []
-
-    classes = {}
-
     bbox_threshold = 0.8
 
     visualise = True
@@ -302,20 +297,18 @@ def make_predicton(file_paht,con):
     img = cv2.imread(file_paht)
 
     X, ratio = format_img(img, con)
-
+    
     if K.image_dim_ordering() == 'tf':
         X = np.transpose(X, (0, 2, 3, 1))
 
     # get the feature maps and output from the RPN
     [Y1, Y2, F] = model_rpn.predict(X)
 
-
     R = roi_helpers.rpn_to_roi(Y1, Y2, con, K.image_dim_ordering(), overlap_thresh=0.7)
-
+    
     # convert from (x1,y1,x2,y2) to (x,y,w,h)
     R[:, 2] -= R[:, 0]
     R[:, 3] -= R[:, 1]
-
     # apply the spatial pyramid pooling to the proposed regions
     bboxes = {}
     probs = {}
@@ -335,14 +328,12 @@ def make_predicton(file_paht,con):
             ROIs = ROIs_padded
 
         [P_cls, P_regr] = model_classifier_only.predict([F, ROIs])
-
         for ii in range(P_cls.shape[1]):
-
-            if np.max(P_cls[0, ii, :]) < bbox_threshold or np.argmax(P_cls[0, ii, :]) == (P_cls.shape[2] - 1):
-                continue
+            #if np.max(P_cls[0, ii, :]) < bbox_threshold or np.argmax(P_cls[0, ii, :]) == (P_cls.shape[2] - 1):
+                #print("np.max(P_cls[0, ii, :]) < bbox_threshold")
+                #continue
 
             cls_name = class_mapping[np.argmax(P_cls[0, ii, :])]
-
             if cls_name not in bboxes:
                 bboxes[cls_name] = []
                 probs[cls_name] = []
@@ -366,7 +357,6 @@ def make_predicton(file_paht,con):
 
     for key in bboxes:
         bbox = np.array(bboxes[key])
-
         new_boxes, new_probs = roi_helpers.non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.5)
         for jk in range(new_boxes.shape[0]):
             (x1, y1, x2, y2) = new_boxes[jk,:]
@@ -378,11 +368,18 @@ def make_predicton(file_paht,con):
             textLabel = '{}: {}'.format(key,int(100*new_probs[jk]))
             all_dets.append((key,100*new_probs[jk]))
 
-            (retval,baseLine) = cv2.getTextSize(textLabel,cv2.FONT_HERSHEY_COMPLEX,1,1)
-            textOrg = (real_x1, real_y1-0)
+            """ (retval,baseLine) = cv2.getTextSize(textLabel,cv2.FONT_HERSHEY_COMPLEX,1,1)
+            textOrg = (real_x1, real_y1-0) """
 
-            cv2.rectangle(img, (textOrg[0] - 5, textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (0, 0, 0), 2)
+            """ print("text label :{}".format(textLabel))
+            print("textorg :{}".format(textOrg))
+            print("retval:{}".format(retval))
+            print("baseLine:{}".format(baseLine))
+            print("baseLine:{}".format(baseLine)) """
+            
+
+            """ cv2.rectangle(img, (textOrg[0] - 5, textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (0, 0, 0), 2)
             cv2.rectangle(img, (textOrg[0] - 5,textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (255, 255, 255), -1)
-            cv2.putText(img, textLabel, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
+            cv2.putText(img, textLabel, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1) """
 
-    return all_dets
+    return all_dets[:3]

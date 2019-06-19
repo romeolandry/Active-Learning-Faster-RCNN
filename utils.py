@@ -84,65 +84,20 @@ def sort_list_sampling(list,sampling_methode):
     
     return list
 
-def readSeed_Simple():
-    """ Diese Funktion wird labellierte Data auswählen."""
-        # Eingabe:
-                # pathToDataSet Pfad zu den gesamten Bilddateien
-                # pathToSeed: pfad zu den Bildverzeichnis, das für das training des Models benuzt wird
-                # imageType: Bildsart zu trainieren
-                # anotationType: Dateitipp zur Annotation 
-        # Verarbeitung:Es wurde datei in train Verzeichnis des Models (Model/research/object_detection/images/train)
-        # Ausgabe: cvs :datei für tensorflow api
-    seed=[]
-    Unlabelierte=[]
-    if pathToSeed ==None:
-        pathImg = pathToDataSet + str('/*.') + imageType
-        pathAnotattion = pathToDataSet + str('/*.')+ anotationType 
-        imgFiles = glob.glob(pathImg)
-        anotationFiles = glob.glob(pathAnotattion)
-
-        sorted(imgFiles,reverse=True)
-        sorted(anotationFiles,reverse=True)
-        count= round(len(anotationFiles)*10/100)
-        i=0;
-        for bild in zip(imgFiles,anotationFiles):
-            if (i<count):
-                seed.append(bild)
+def create_mapping_cls(list_traimingsmenge):
+    """ Diese Funktion wird mapping für trainingsmenge erstellen"""
+    cls_count={}
+    cls_mapping={}
+    for val in list_traimingsmenge:
+        for bb in val['bboxes']:
+            if bb['class'] not in cls_count:
+                cls_count[bb['class']] = 1
             else:
-                Unlabelierte.append(bild)
-            i=i+1
+                cls_count[bb['class']] += 1
+            if bb['class'] not in cls_mapping:
+                cls_mapping[bb['class']] = len(cls_mapping)    
 
-        """ for img in imgFiles:
-            for anot in anotationFiles:
-                if (ntpath.basename(os.path.splitext(anot)[0])== ntpath.basename(os.path.splitext(img)[0])):
-                    seed.append(img)
-                    seed.append(anot)
-   
-        for data in seed:
-            filename= os.path.basename(data)
-            copyfile(data,os.path.join(pathtotrain,filename))
-     """
-    else:
-        pathImg = pathToDataSet + str('/*.') + imageType
-        pathAnotattion = pathToDataSet + str('/*.')+ anotationType 
-        imgFiles = glob.glob(pathImg)
-        anotationFiles = glob.glob(pathAnotattion)   
-        #imgFiles = imgFiles.sort()
-        #anotationFiles=anotationFiles.sort()
-
-        for bild in zip(imgFiles,anotationFiles):
-            Unlabelierte.append(bild)        
-
-        pathImgSeed = pathToSeed + str('/*.') + imageType
-        pathAnotattionSeed = pathToSeed + str('/*.')+ anotationType 
-        imgFilesseed = glob.glob(pathImgSeed)
-        anotationFilesseed = glob.glob(pathAnotattionSeed)
-        #imgFilesseed = imgFiles.sort()
-        #anotationFilesseed=anotationFiles.sort()
-        for bild in zip(imgFilesseed,anotationFilesseed):
-            seed.append(bild)
-
-    return seed,Unlabelierte
+    return cls_count,cls_mapping
 
 def createSeedPlascal_Voc(pathToDataSet,batch_size):
     """ Diese Funktion wird labellierte Data auswählen."""
@@ -228,18 +183,24 @@ def Pool_based_sampling_test (listeImage,listscore):
     df_imgcls.sort_values(by=['scores'])
     return df_imgcls
 
-def appendDFToCSV_void(dictPerformance, csvFilePath, sep=","):
+def appendDFToCSV_void(dictPerformance, csvFilePath):
     df = pd.DataFrame(dictPerformance, index=[0])
     if not os.path.isfile(csvFilePath):
-        df.to_csv(csvFilePath, mode='a', index=False, sep=sep)
-    elif len(df.columns) != len(pd.read_csv(csvFilePath, nrows=1, sep=sep).columns):
-        raise Exception("Columns do not match!! Dataframe has " + str(len(df.columns)) + " columns. CSV file has " + str(len(pd.read_csv(csvFilePath, nrows=1, sep=sep).columns)) + " columns.")
-    elif not (df.columns == pd.read_csv(csvFilePath, nrows=1, sep=sep).columns).all():
+        df.to_csv(csvFilePath, mode='a', index=False, sep=";")
+    elif len(df.columns) != len(pd.read_csv(csvFilePath, nrows=1, sep=";").columns):
+        raise Exception("Columns do not match!! Dataframe has " + str(len(df.columns)) + " columns. CSV file has " + str(len(pd.read_csv(csvFilePath, nrows=1, sep=";").columns)) + " columns.")
+    elif not (df.columns == pd.read_csv(csvFilePath, nrows=1, sep=";").columns).all():
         raise Exception("Columns and column order of dataframe and csv file do not match!!")
     else:
-        df.to_csv(csvFilePath, mode='a', index=False, sep=sep, header=False)
+        df.to_csv(csvFilePath, mode='a', index=False, sep=";", header=False)
+
+def writePerformanceModell(ModellParmeter, pathtofile):
+        Perform = pd.DataFrame(ModellParmeter, index=[0])
+        Perform.to_csv(pathtofile, sep=';', mode='a', header=False, index=False)
+        
 
 if __name__ == "__main__":
-    ModellParamdict = {'name': 'landry', 'Accuracy': 90,'TestFehle': 1 - 0.9, 'Parameter': 'param', 'seed': 34, 'Dauert':2899}
-    Perform = pd.DataFrame(ModellParamdict, index=[0])
-    appendDFToCSV_void(Perform,'/home/kamgo/activ_lerning _object_dection/keras-frcnn/performance/performance.csv',",")
+    performamce ={'unsischerheit_methode':'ent','Iteration':5,'Aktuelle Ungenaueheit':0.5,'abgelaufene Zeit':600,'Anzahl der vorhergesagteten Bildern':20,'Gut predicted':0}
+    #Perform = pd.DataFrame(performamce, index=[0])
+    #Perform.columns = ['unsischerheit_methode','Iteration','Aktuelle Ungenaueheit','abgelaufene Zeit','Anzahl der vorhergesagteten Bildern','Gut predicted']
+    appendDFToCSV_void(performamce,'/home/kamgo/activ_lerning-_object_dection/performance/performance.csv')
