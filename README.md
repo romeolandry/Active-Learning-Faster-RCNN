@@ -1,5 +1,5 @@
 # Activ Learning Obeject detection
-Keras Implementierung vom aktiven Lernnen in Objekt erkennung: Ziel  dieses projekt ist Aktives Lernenverfahren zur Detection des Objekts zur Anwendung zu bringen 
+Keras Implementierung vom aktiven Lernnen in Objekt Erkennung: Ziel  dieses projekts ist Aktives Lernenverfahren zur Detection des Objekts zur Anwendung zu bringen 
 Es wurde ein Keras Faster-RCNN (keras-frcnn) benuzt,die wurde geclont von https://github.com/kbardool/keras-frcnn
 
 USAGE:
