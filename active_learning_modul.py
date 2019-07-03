@@ -38,7 +38,7 @@ pathToDataSet= '/home/kamgo/VOCdevkit'
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
 batch_size = 200 # batch size for pool based simple
-batch = 50 # Anzahl von daein zu senden to oracle
+batch = 300 # Anzahl von dataein zu senden to oracle
 loos_not_change = 10 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
 seed_imgs =[]
