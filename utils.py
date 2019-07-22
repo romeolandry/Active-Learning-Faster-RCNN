@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import operator
 from operator import itemgetter
+import random
 
 def entropy_sampling(prediction):
     """ Diese Funktion rechnet die Entropie einer Prediction 
@@ -98,6 +99,55 @@ def create_mapping_cls(list_traimingsmenge):
                 cls_mapping[bb['class']] = len(cls_mapping)    
 
     return cls_count,cls_mapping
+ 
+def create_batchify_from_list(listdata,percentTotrain):
+    sizetotrain = int(round((len(listdata)* percentTotrain)/100))
+    number_of_batch = int(len(listdata)/sizetotrain)
+    return [listdata[i::number_of_batch] for i in range(number_of_batch)]
+
+def create_batchify_from_path (pathToDataSet,percentTotrain):
+
+    all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
+
+    sizetotrain = int(round((len(all_imgs)* percentTotrain)/100))
+    nmber_of_batch = int(len(all_imgs)/sizetotrain)
+   
+    return [all_imgs[i::nmber_of_batch] for i in range(nmber_of_batch)],classes_count,class_mapping
+
+def createSeed_pro_batch(batch_elt,classes_count,class_mapping,train_size_pro_batch):
+    """ Diese Funktion wird labellierte Data auswählen."""
+    print("##### Erstellung von Datenmenge Seed und unlabellierte ####")
+    seed_imgs=[]
+    all_imgs =[]
+    seed_classes_count={}
+    seed_classes_mapping={}
+    classes_count ={}
+    class_mapping ={}
+    #all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
+    sizetotrain = int(round((len(batch_elt)* train_size_pro_batch)/100))
+    seed_imgs = batch_elt[:sizetotrain]
+    all_imgs = batch_elt[sizetotrain:]
+    print("Erstellung anotation, class_maping und class_count vom Seed")
+    for seed in seed_imgs:
+        for bb in seed['bboxes']:
+            if bb['class'] not in seed_classes_count:
+                seed_classes_count[bb['class']] = 1
+            else:
+                seed_classes_count[bb['class']] += 1
+            if bb['class'] not in seed_classes_mapping:
+                seed_classes_mapping[bb['class']] = len(seed_classes_mapping)
+    print("Erstellung anotation, class_maping und class_count vom unlabellierte Daten")     
+    for im in batch_elt:
+        for bb in im['bboxes']:
+            if bb['class'] not in classes_count:
+                classes_count[bb['class']] = 1
+            else:
+                classes_count[bb['class']] += 1
+            if bb['class'] not in class_mapping:
+                class_mapping[bb['class']] = len(class_mapping)
+    
+    return all_imgs, seed_imgs, class_mapping,classes_count,seed_classes_mapping,seed_classes_count
+
 
 def createSeedPlascal_Voc(pathToDataSet,batch_size):
     """ Diese Funktion wird labellierte Data auswählen."""
@@ -109,8 +159,9 @@ def createSeedPlascal_Voc(pathToDataSet,batch_size):
     classes_count ={}
     class_mapping ={}
     all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
-    seed_imgs = all_imgs[:batch_size] + seed_imgs
-    all_imgs = all_imgs[batch_size:]
+    sizetotrain = int(round((len(all_imgs)* batch_size)/100))
+    seed_imgs = all_imgs[:sizetotrain]
+    all_imgs = all_imgs[sizetotrain:]
     print("Erstellung anotation, class_maping und class_count vom Seed")
     for seed in seed_imgs:
         for bb in seed['bboxes']:
@@ -131,6 +182,7 @@ def createSeedPlascal_Voc(pathToDataSet,batch_size):
                 class_mapping[bb['class']] = len(class_mapping)
     
     return all_imgs, seed_imgs, class_mapping,classes_count,seed_classes_mapping,seed_classes_count
+
 def Datei_vorbereitung (seed,Dateitype):
     """ Erstellung von Matching file .txt zum training oder zum Testen
     """
@@ -200,7 +252,8 @@ def writePerformanceModell(ModellParmeter, pathtofile):
         
 
 if __name__ == "__main__":
-    performamce ={'unsischerheit_methode':'ent','Iteration':5,'Aktuelle Ungenaueheit':0.5,'abgelaufene Zeit':600,'Anzahl der vorhergesagteten Bildern':20,'Gut predicted':0}
-    #Perform = pd.DataFrame(performamce, index=[0])
-    #Perform.columns = ['unsischerheit_methode','Iteration','Aktuelle Ungenaueheit','abgelaufene Zeit','Anzahl der vorhergesagteten Bildern','Gut predicted']
-    appendDFToCSV_void(performamce,'/home/kamgo/activ_lerning-_object_dection/performance/performance.csv')
+    pathToDataSet= '/home/kamgo/VOCdevkit'
+    listest = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    #all_imgs_batchify,sclasses_count,class_mapping = create_batchify_from_path(pathToDataSet,10)
+    all_imgs_batchify= create_batchify_from_list(listest,10)
+    print("es git ",len(all_imgs_batchify),"list von ",len(all_imgs_batchify[0]) ,"Bilder")

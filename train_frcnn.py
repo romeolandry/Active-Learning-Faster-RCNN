@@ -23,7 +23,7 @@ from keras_frcnn import losses as losses
 import keras_frcnn.roi_helpers as roi_helpers
 from keras.utils import generic_utils
 from keras.callbacks import TensorBoard
-from keras.applications.resnet50 import ResNet50
+#from keras.applications.resnet50 import ResNet50
 
 
 # tensorboard
