@@ -1,4 +1,8 @@
 from __future__ import division
+from numpy.random import seed
+seed(200)
+from tensorflow import set_random_seed
+set_random_seed(200)
 import random
 import pprint
 import sys
@@ -57,9 +61,6 @@ def train_model(seed_data, classes_count, class_mapping, con):
 
     inv_map = {v: k for k, v in class_mapping.items()}
 
-    #print('Training images per class:')
-    #pprint.pprint(classes_count)
-    #print('Num classes (including bg) = {}'.format(len(classes_count)))
 
     random.shuffle(seed_data)
 
@@ -129,7 +130,7 @@ def train_model(seed_data, classes_count, class_mapping, con):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 1000
+    epoch_length = 4
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
