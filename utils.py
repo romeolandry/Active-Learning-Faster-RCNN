@@ -244,7 +244,7 @@ def appendDFToCSV_void(dictPerformance, csvFilePath):
     elif not (df.columns == pd.read_csv(csvFilePath, nrows=1, sep=";").columns).all():
         raise Exception("Columns and column order of dataframe and csv file do not match!!")
     else:
-        df.to_csv(csvFilePath, mode='a', index=False, sep=";", header=False)
+        df.to_csv(csvFilePath, mode='a', index=False, sep=";", header=True)
 
 def writePerformanceModell(ModellParmeter, pathtofile):
         Perform = pd.DataFrame(ModellParmeter, index=[0])
@@ -257,3 +257,5 @@ if __name__ == "__main__":
     #all_imgs_batchify,sclasses_count,class_mapping = create_batchify_from_path(pathToDataSet,10)
     all_imgs_batchify= create_batchify_from_list(listest,10)
     print("es git ",len(all_imgs_batchify),"list von ",len(all_imgs_batchify[0]) ,"Bilder")
+    performamce ={'unsischerheit_methode':5,'Iteration':2,'Batch':5,'Aktuelle Ungenaueheit':3.6,'abgelaufene Zeit':90,'Anzahl der vorhergesagteten Bildern':18,'Gut predicted':0}
+    appendDFToCSV_void(performamce,'performance/performance.csv')

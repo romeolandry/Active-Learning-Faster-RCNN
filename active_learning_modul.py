@@ -38,7 +38,7 @@ pathToDataSet= '/home/kamgo/VOCdevkit'
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
 batch_size = 10 # Prozenzahl von Daten  pro batch_lement
-train_size_pro_batch = 50 # N-Prozen von batch-size element
+train_size_pro_batch = 99 # N-Prozen von batch-size element
 to_Query = 20 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 loos_not_change = 10 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
@@ -55,10 +55,11 @@ horizontal_flips = True # Augment with horizontal flips in training.
 vertical_flips = True   # Augment with vertical flips in training. 
 rot_90 = True           # Augment with 90 degree rotations in training. 
 output_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5')
+
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras. 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 5
+num_epochs = 1
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         batch_numb = batch_numb +1
         all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeed_pro_batch(batch_elt,classes_count,class_mapping,train_size_pro_batch)        
         
-        best_loose = 0
+        best_loss = np.Inf
         cur_loos = 0
         iteration = 0
         not_change = 0
@@ -163,7 +164,7 @@ if __name__ == "__main__":
             start_time = time.time()
             print("size of train data: {}".format(len(seed_imgs)))
             print("size of data reste data {}".format(len(all_imgs)))
-            cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con)
+            cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss)
             #test
             #test = test.test_model(test_path,con)
             # Anwendung des Models
@@ -174,16 +175,17 @@ if __name__ == "__main__":
             #seed_imgs=pool_based_sampling(list_predict_sort,unsischerheit_methode)
             seed_classes_count,seed_classes_mapping=utils.create_mapping_cls(seed_imgs)      
             performamce ={'unsischerheit_methode':unsischerheit_methode,'Iteration':iteration,'Batch':batch_numb,'Aktuelle Ungenaueheit':cur_loos,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Gut predicted':truepositiv}
-            utils.appendDFToCSV_void(performamce,pathToPermformance)
-            
+            utils.appendDFToCSV_void(performamce,pathToPermformance)            
             #Abbruch Krieterium
-            if best_loose != cur_loos:
-                if best_loose>=cur_loos:
+            if best_loss != cur_loos:
+                if best_loss>cur_loos:
                     # Verbesserung des Models 
-                    print("das Model hat sich verbessert von: {} loos ist jetzt:{}".format(best_loose, cur_loos))
+                    print("das Model hat sich verbessert von: {} loos ist jetzt:{}".format(best_loss, cur_loos))
                     not_change+=1
                 else:
-                    best_loose= cur_loos        
+                    best_loss= cur_loos        
             if loos_not_change <= not_change:
                 print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(loos_not_change))
                 break
+            from keras import backend as K
+            K.clear_session()
