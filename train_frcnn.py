@@ -130,7 +130,9 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
+
     epoch_length = 500
+
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0

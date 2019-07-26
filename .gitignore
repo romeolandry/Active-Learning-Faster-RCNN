@@ -130,3 +130,7 @@ train_images_txt
 #performance
 performance/*
 
+#my computer workspace
+.vscode
+AL_keras.code-workspace
+
