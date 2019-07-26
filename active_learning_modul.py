@@ -37,15 +37,10 @@ pathToDataSet= '/home/kamgo/VOCdevkit'
 
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
-<<<<<<< HEAD
 batch_size = 40 # Prozenzahl von Daten  pro batch_lement
 train_size_pro_batch = 20 # N-Prozen von batch-size element
 to_Query = 100 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
-=======
-batch_size = 10 # Prozenzahl von Daten  pro batch_lement
-train_size_pro_batch = 99 # N-Prozen von batch-size element
-to_Query = 20 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
->>>>>>> 699631bb164d33c8dff7b5dab5c91fd046efd686
+
 loos_not_change = 10 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
 seed_imgs =[]
@@ -126,7 +121,7 @@ def oracle(pool,prediction_list,batch_size,uncertainty_m,trainingsmenge):
     to_find = len(prediction_list)
     truePositiv = 0
     for pred in prediction_list:
-        for el in pool:=
+        for el in pool:
             if ntpath.basename(el['filepath']) == ntpath.basename(pred[0]):
                 to_find=to_find-1
                 neue_seed.append(el)
