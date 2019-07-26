@@ -228,7 +228,6 @@ def test_model(img_path,con):
         cv2.imwrite('./results_imgs/{}.png'.format(idx),img)
 
 def make_predicton(file_paht,con):
-    print(file_paht)
     if con.network == 'resnet50':
         import keras_frcnn.resnet as nn
     elif con.network == 'vgg':

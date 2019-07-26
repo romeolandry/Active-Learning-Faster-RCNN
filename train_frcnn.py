@@ -1,4 +1,8 @@
 from __future__ import division
+from numpy.random import seed
+seed(200)
+from tensorflow import set_random_seed
+set_random_seed(200)
 import random
 import pprint
 import sys
@@ -19,7 +23,7 @@ from keras_frcnn import losses as losses
 import keras_frcnn.roi_helpers as roi_helpers
 from keras.utils import generic_utils
 from keras.callbacks import TensorBoard
-from keras.applications.resnet50 import ResNet50
+#from keras.applications.resnet50 import ResNet50
 
 
 # tensorboard
@@ -32,7 +36,7 @@ def write_log(callback, names, logs, batch_no):
         callback.writer.add_summary(summary, batch_no)
         callback.writer.flush()
 
-def train_model(seed_data, classes_count, class_mapping, con):
+def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     sys.setrecursionlimit(40000)
     from keras_frcnn import losses as losses    
     
@@ -57,9 +61,6 @@ def train_model(seed_data, classes_count, class_mapping, con):
 
     inv_map = {v: k for k, v in class_mapping.items()}
 
-    #print('Training images per class:')
-    #pprint.pprint(classes_count)
-    #print('Num classes (including bg) = {}'.format(len(classes_count)))
 
     random.shuffle(seed_data)
 
@@ -129,7 +130,7 @@ def train_model(seed_data, classes_count, class_mapping, con):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 1000
+    epoch_length = 500
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
@@ -138,8 +139,7 @@ def train_model(seed_data, classes_count, class_mapping, con):
     rpn_accuracy_rpn_monitor = []
     rpn_accuracy_for_epoch = []
     start_time = time.time()
-
-    best_loss = np.Inf
+    
 
     class_mapping_inv = {v: k for k, v in class_mapping.items()}
     print('Starting training')
@@ -203,8 +203,11 @@ def train_model(seed_data, classes_count, class_mapping, con):
                 try:
                     selected_neg_samples = np.random.choice(neg_samples, con.num_rois - len(selected_pos_samples), replace=False).tolist()
                 except:
-                    selected_neg_samples = np.random.choice(neg_samples, con.num_rois - len(selected_pos_samples), replace=True).tolist()
-
+                    try:
+                        selected_neg_samples = np.random.choice(neg_samples, con.num_rois - len(selected_pos_samples), replace=True).tolist()
+                    except:
+                        # The neg_samples is [[1 0 ]] only, therefore there's no negative sample
+                        continue
                 sel_samples = selected_pos_samples + selected_neg_samples
             else:
                 # in the extreme case where num_rois = 1, we pick a random pos or neg sample
@@ -265,6 +268,7 @@ def train_model(seed_data, classes_count, class_mapping, con):
                     if con.verbose:
                         print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
                     best_loss = curr_loss
+                    con.best_loss = best_loss
                     model_all.save_weights(con.model_path)
 
                 break

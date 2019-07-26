@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import operator
 from operator import itemgetter
+import random
 
 def entropy_sampling(prediction):
     """ Diese Funktion rechnet die Entropie einer Prediction 
@@ -98,6 +99,55 @@ def create_mapping_cls(list_traimingsmenge):
                 cls_mapping[bb['class']] = len(cls_mapping)    
 
     return cls_count,cls_mapping
+ 
+def create_batchify_from_list(listdata,percentTotrain):
+    sizetotrain = int(round((len(listdata)* percentTotrain)/100))
+    number_of_batch = int(len(listdata)/sizetotrain)
+    return [listdata[i::number_of_batch] for i in range(number_of_batch)]
+
+def create_batchify_from_path (pathToDataSet,percentTotrain):
+
+    all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
+
+    sizetotrain = int(round((len(all_imgs)* percentTotrain)/100))
+    nmber_of_batch = int(len(all_imgs)/sizetotrain)
+   
+    return [all_imgs[i::nmber_of_batch] for i in range(nmber_of_batch)],classes_count,class_mapping
+
+def createSeed_pro_batch(batch_elt,classes_count,class_mapping,train_size_pro_batch):
+    """ Diese Funktion wird labellierte Data auswählen."""
+    print("##### Erstellung von Datenmenge Seed und unlabellierte ####")
+    seed_imgs=[]
+    all_imgs =[]
+    seed_classes_count={}
+    seed_classes_mapping={}
+    classes_count ={}
+    class_mapping ={}
+    #all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
+    sizetotrain = int(round((len(batch_elt)* train_size_pro_batch)/100))
+    seed_imgs = batch_elt[:sizetotrain]
+    all_imgs = batch_elt[sizetotrain:]
+    print("Erstellung anotation, class_maping und class_count vom Seed")
+    for seed in seed_imgs:
+        for bb in seed['bboxes']:
+            if bb['class'] not in seed_classes_count:
+                seed_classes_count[bb['class']] = 1
+            else:
+                seed_classes_count[bb['class']] += 1
+            if bb['class'] not in seed_classes_mapping:
+                seed_classes_mapping[bb['class']] = len(seed_classes_mapping)
+    print("Erstellung anotation, class_maping und class_count vom unlabellierte Daten")     
+    for im in batch_elt:
+        for bb in im['bboxes']:
+            if bb['class'] not in classes_count:
+                classes_count[bb['class']] = 1
+            else:
+                classes_count[bb['class']] += 1
+            if bb['class'] not in class_mapping:
+                class_mapping[bb['class']] = len(class_mapping)
+    
+    return all_imgs, seed_imgs, class_mapping,classes_count,seed_classes_mapping,seed_classes_count
+
 
 def createSeedPlascal_Voc(pathToDataSet,batch_size):
     """ Diese Funktion wird labellierte Data auswählen."""
@@ -109,8 +159,9 @@ def createSeedPlascal_Voc(pathToDataSet,batch_size):
     classes_count ={}
     class_mapping ={}
     all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
-    seed_imgs = all_imgs[:batch_size] + seed_imgs
-    all_imgs = all_imgs[batch_size:]
+    sizetotrain = int(round((len(all_imgs)* batch_size)/100))
+    seed_imgs = all_imgs[:sizetotrain]
+    all_imgs = all_imgs[sizetotrain:]
     print("Erstellung anotation, class_maping und class_count vom Seed")
     for seed in seed_imgs:
         for bb in seed['bboxes']:
@@ -131,6 +182,7 @@ def createSeedPlascal_Voc(pathToDataSet,batch_size):
                 class_mapping[bb['class']] = len(class_mapping)
     
     return all_imgs, seed_imgs, class_mapping,classes_count,seed_classes_mapping,seed_classes_count
+
 def Datei_vorbereitung (seed,Dateitype):
     """ Erstellung von Matching file .txt zum training oder zum Testen
     """
@@ -186,6 +238,7 @@ def Pool_based_sampling_test (listeImage,listscore):
 def appendDFToCSV_void(dictPerformance, csvFilePath):
     df = pd.DataFrame(dictPerformance, index=[0])
     if not os.path.isfile(csvFilePath):
+        print("saved file")
         df.to_csv(csvFilePath, mode='a', index=False, sep=";")
     elif len(df.columns) != len(pd.read_csv(csvFilePath, nrows=1, sep=";").columns):
         raise Exception("Columns do not match!! Dataframe has " + str(len(df.columns)) + " columns. CSV file has " + str(len(pd.read_csv(csvFilePath, nrows=1, sep=";").columns)) + " columns.")
@@ -200,7 +253,9 @@ def writePerformanceModell(ModellParmeter, pathtofile):
         
 
 if __name__ == "__main__":
-    performamce ={'unsischerheit_methode':'ent','Iteration':5,'Aktuelle Ungenaueheit':0.5,'abgelaufene Zeit':600,'Anzahl der vorhergesagteten Bildern':20,'Gut predicted':0}
-    #Perform = pd.DataFrame(performamce, index=[0])
-    #Perform.columns = ['unsischerheit_methode','Iteration','Aktuelle Ungenaueheit','abgelaufene Zeit','Anzahl der vorhergesagteten Bildern','Gut predicted']
-    appendDFToCSV_void(performamce,'/home/kamgo/activ_lerning-_object_dection/performance/performance.csv')
+    base_path=os.getcwd()
+    #test_path='/home/kamgo/test_image'
+    pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
+    print(pathToPermformance)
+    performamce ={'unsischerheit_methode':5,'Iteration':3,'Aktuelle Ungenaueheit':3,'abgelaufene Zeit':62,'Anzahl der vorhergesagteten Bildern':6,'Gut predicted':8}
+    appendDFToCSV_void(performamce,pathToPermformance)  

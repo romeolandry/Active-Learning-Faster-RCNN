@@ -37,8 +37,9 @@ pathToDataSet= '/home/kamgo/VOCdevkit'
 
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
-batch_size = 200 # batch size for pool based simple
-batch = 300 # Anzahl von dataein zu senden to oracle
+batch_size = 40 # Prozenzahl von Daten  pro batch_lement
+train_size_pro_batch = 20 # N-Prozen von batch-size element
+to_Query = 100 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 loos_not_change = 10 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
 seed_imgs =[]
@@ -54,12 +55,13 @@ horizontal_flips = True # Augment with horizontal flips in training.
 vertical_flips = True   # Augment with vertical flips in training. 
 rot_90 = True           # Augment with 90 degree rotations in training. 
 output_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5')
+
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras. 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 1000
+num_epochs = 500
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
-num_rois = 32 # Number of RoIs to process at once.
+num_rois = 16 # Number of RoIs to process at once default 32 I rediuce it to 16 .
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
 
 def train_vorbereitung ():
@@ -84,19 +86,19 @@ def train_vorbereitung ():
   
     return con
 
-def make_prediction(unsischerheit_methode,config):
+def make_prediction(unsischerheit_methode,list_to_predict,config):
     """es wurde gespeichert: bilder,vorhergesagtete Klasse mit entsprechende 
     Wahrscheinlichkeiten, und unsischerheitswert: predict über batch-Element"""
     print("############# Anfang der Vorhersage #########")
     list_predicttion_bild_uncert =[]    
     list_pfad_imgs=[]
-    for img in all_imgs:
+    for img in list_to_predict:
         list_pfad_imgs.append(img['filepath'])
         
     print("Anzahl von bildern zu predict:{}".format(len(list_pfad_imgs)))
     for filepath in list_pfad_imgs:      
         preds = test.make_predicton(filepath,config)
-        print(preds)
+        #print(preds)
         # unsischerheit rechnen 
         unsischerheit = utils.berechnung_unsischerheit(preds,unsischerheit_methode)
         list_predicttion_bild_uncert.append((filepath,preds,unsischerheit))
@@ -104,15 +106,7 @@ def make_prediction(unsischerheit_methode,config):
     print("Ende der Vorhersage")
     return list_predicttion_bild_uncert
 
-""" def pool_based_sampling (list_predict,list_image_send_for_predict):
-    
-    neue_seed =[]
-    for el in list_predict:
-
-    
-    return neue_seed """
-
-def oracle(prediction_list,batch_size,uncertainty_m,trainingsmenge):
+def oracle(pool,prediction_list,batch_size,uncertainty_m,trainingsmenge):
     neue_seed =[]
     print("Query Oracle")
     # auf basis von Unsischerheit wird die Liste  sortiert
@@ -122,8 +116,8 @@ def oracle(prediction_list,batch_size,uncertainty_m,trainingsmenge):
     prediction_list = prediction_list[:batch_size]
     to_find = len(prediction_list)
     truePositiv = 0
-    for el in all_imgs:
-        for pred in prediction_list:
+    for pred in prediction_list:
+        for el in pool:
             if ntpath.basename(el['filepath']) == ntpath.basename(pred[0]):
                 to_find=to_find-1
                 neue_seed.append(el)
@@ -142,56 +136,58 @@ def oracle(prediction_list,batch_size,uncertainty_m,trainingsmenge):
     print("true positive:{}".format(truePositiv))
     trainingsmenge = trainingsmenge + neue_seed
     for el in neue_seed:
-        all_imgs.remove(el)
-    print(len(all_imgs))
+        pool.remove(el)
+    print(len(pool))
     return truePositiv,trainingsmenge
            
 if __name__ == "__main__":
     #Erstellung von Seed und unlabellierte Datenmege
-    datatosendtoOracle,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count=utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
-    best_loose = 0
+    #batchtify,classes_count,class_mapping = utils.create_batchify_from_path(pathToDataSet,batch_size)
+    #print(" Es gibt: ", len(batchtify), "Batch von je: ", len(batchtify[0]), " Bilder")
+    #batch_numb = 0
+    best_loss = np.Inf
     cur_loos = 0
     iteration = 0
-    not_change = 0
-    #test    
-    while (len(datatosendtoOracle)!=0):
+    not_change = 0  
+    
+    all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
+    #test
+    #print("the next Batch: ", batch_numb)
+    print("size of train data: {}".format(len(seed_imgs)))
+    print("size of data reste data {}".format(len(all_imgs)))
+    while (len(all_imgs)!=0):
         # train
         iteration += 1
         con = train_vorbereitung()
         start_time = time.time()
-        # Transfer von neuen labellierte Daten zu Seed zu trainieren
-        if len(all_imgs)==0:
-            all_imgs = datatosendtoOracle[:batch]
-            datatosendtoOracle= datatosendtoOracle[batch:]
-        else:
-            all_imgs = all_imgs + datatosendtoOracle[:batch_size]
-            datatosendtoOracle= datatosendtoOracle[batch_size:]
-
         print("size of train data: {}".format(len(seed_imgs)))
-        print("size of data to predict {}".format(len(all_imgs)))
-        print("size of data reste data {}".format(len(datatosendtoOracle)))
-        cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con)
+        print("size of data reste data {}".format(len(all_imgs)))
+        cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss)
         #test
         #test = test.test_model(test_path,con)
-
         # Anwendung des Models
-        predict_list = make_prediction(unsischerheit_methode,con)
-        # Query to Oracle: zurückgegeben wird anzahl der rictige vorhergesahte Klasse und die neue Trainingsmenge 
-        truepositiv, seed_imgs = oracle(predict_list,batch_size,unsischerheit_methode,seed_imgs)
+        print("Herstellung von Pool")
+        pool = all_imgs[:to_Query]
+        all_imgs = all_imgs[to_Query:]
+        print("size of data to predict {}".format(len(pool)))
+        predict_list = make_prediction(unsischerheit_methode,pool,con)
+        # Query to Oracle: zurückgegeben wird anzahl der rictige vorhergesahte Klasse und die neue Trainingsmenge
+        print("Abfrage an der Oracle")
+        print("size of data {}".format(len(predict_list)))
+        truepositiv, seed_imgs = oracle(pool,predict_list,to_Query,unsischerheit_methode,seed_imgs)
         # die batch-size Element, die von der Oracle überprüfen wurden,werden in der trainingsmenge übertragen       
         #seed_imgs=pool_based_sampling(list_predict_sort,unsischerheit_methode)
         seed_classes_count,seed_classes_mapping=utils.create_mapping_cls(seed_imgs)      
         performamce ={'unsischerheit_methode':unsischerheit_methode,'Iteration':iteration,'Aktuelle Ungenaueheit':cur_loos,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Gut predicted':truepositiv}
-        utils.appendDFToCSV_void(performamce,pathToPermformance)
-        
+        utils.appendDFToCSV_void(performamce,pathToPermformance)            
         #Abbruch Krieterium
-        if best_loose != cur_loos:
-            if best_loose>=cur_loos:
+        if best_loss != cur_loos:
+            if best_loss>cur_loos:
                 # Verbesserung des Models 
-                print("das Model hat sich verbessert von: {} loos ist jetzt:{}".format(best_loose, cur_loos))
-                not_change+=1
+                print("das Model hat sich verbessert von: {} loos ist jetzt:{}".format(best_loss, cur_loos))
+                best_loss= cur_loos                    
             else:
-                best_loose= cur_loos        
+                not_change+=1     
         if loos_not_change <= not_change:
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(loos_not_change))
             break
