@@ -238,14 +238,13 @@ def Pool_based_sampling_test (listeImage,listscore):
 def appendDFToCSV_void(dictPerformance, csvFilePath):
     df = pd.DataFrame(dictPerformance, index=[0])
     if not os.path.isfile(csvFilePath):
-        print("saved file")
         df.to_csv(csvFilePath, mode='a', index=False, sep=";")
     elif len(df.columns) != len(pd.read_csv(csvFilePath, nrows=1, sep=";").columns):
         raise Exception("Columns do not match!! Dataframe has " + str(len(df.columns)) + " columns. CSV file has " + str(len(pd.read_csv(csvFilePath, nrows=1, sep=";").columns)) + " columns.")
     elif not (df.columns == pd.read_csv(csvFilePath, nrows=1, sep=";").columns).all():
         raise Exception("Columns and column order of dataframe and csv file do not match!!")
     else:
-        df.to_csv(csvFilePath, mode='a', index=False, sep=";", header=True)
+        df.to_csv(csvFilePath, mode='a', index=False, sep=";", header=False)
 
 def writePerformanceModell(ModellParmeter, pathtofile):
         Perform = pd.DataFrame(ModellParmeter, index=[0])

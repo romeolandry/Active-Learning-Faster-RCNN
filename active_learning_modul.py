@@ -55,15 +55,15 @@ class_mapping ={}
 horizontal_flips = True # Augment with horizontal flips in training. 
 vertical_flips = True   # Augment with vertical flips in training. 
 rot_90 = True           # Augment with 90 degree rotations in training. 
-output_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5')
+output_weight_path = os.path.join(base_path, 'models/model_frcnn_out.hdf5')
 
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
-base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras. 
+base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 500
+num_epochs = 1000
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
-num_rois = 16 # Number of RoIs to process at once default 32 I rediuce it to 16 .
+num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16 .
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
 
 def train_vorbereitung ():
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     cur_loos = 0
     iteration = 0
     not_change = 0  
-    
+    con = train_vorbereitung()
     all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
     #test
     #print("the next Batch: ", batch_numb)
@@ -162,7 +162,6 @@ if __name__ == "__main__":
     while (len(all_imgs)!=0):
         # train
         iteration += 1
-        con = train_vorbereitung()
         start_time = time.time()
         print("size of train data: {}".format(len(seed_imgs)))
         print("size of data reste data {}".format(len(all_imgs)))
@@ -188,8 +187,10 @@ if __name__ == "__main__":
         if best_loss != cur_loos:
             if best_loss>cur_loos:
                 # Verbesserung des Models 
-                print("das Model hat sich verbessert von: {} loos ist jetzt:{}".format(best_loss, cur_loos))
-                best_loss= cur_loos                    
+                print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(best_loss, cur_loos))
+                best_loss= cur_loos
+                con.base_net_weights = con.model_path
+                print("neue  base net weight: {}".format(con.base_net_weights))                  
             else:
                 not_change+=1     
         if loos_not_change <= not_change:
