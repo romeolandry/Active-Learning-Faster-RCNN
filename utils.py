@@ -300,12 +300,30 @@ def appendDFToCSV_void(dictPerformance, csvFilePath):
 def writePerformanceModell(ModellParmeter, pathtofile):
         Perform = pd.DataFrame(ModellParmeter, index=[0])
         Perform.to_csv(pathtofile, sep=';', mode='a', header=False, index=False)
-        
+def check_predict(list_pred):
+    all_bg = False
+    list_found_bg=0
+    list_not_bg =[]
+    for el in list_pred:
+        if el[0] == 'bg':
+            list_found_bg+=1
+    print(list_found_bg)
+
+    if len(list_pred)== list_found_bg:
+        all_bg = True
+
+    return all_bg,list_not_bg
 
 if __name__ == "__main__":
-    base_path=os.getcwd()
+
+    #base_path=os.getcwd()
     #test_path='/home/kamgo/test_image'
-    pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
-    print(pathToPermformance)
-    performamce ={'unsischerheit_methode':5,'Iteration':3,'Aktuelle Ungenaueheit':3,'abgelaufene Zeit':62,'Anzahl der vorhergesagteten Bildern':6,'Gut predicted':8}
-    appendDFToCSV_void(performamce,pathToPermformance)
+    #pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
+    #print(pathToPermformance)
+    #performamce ={'unsischerheit_methode':5,'Iteration':3,'Aktuelle Ungenaueheit':3,'abgelaufene Zeit':62,'Anzahl der vorhergesagteten Bildern':6,'Gut predicted':8}
+    #appendDFToCSV_void(performamce,pathToPermformance)
+    list_predict =[('bg', 94.8340892791748), ('bg', 94.80260014533997), ('bg', 94.77835893630981), ('bg', 94.18602585792542), ('bg', 94.15472745895386), ('bg', 93.88720989227295), ('bg', 93.80043745040894), ('bg', 93.59209537506104), ('bg', 93.47149729728699), ('bg', 93.32671165466309), ('bg', 93.2866632938385), ('bg', 93.24570298194885), ('bg', 93.18247437477112), ('bg', 93.03614497184753), ('bg', 92.92904138565063), ('bg', 92.76766777038574), ('bg', 92.58877635002136), ('bg', 92.36408472061157), ('bg', 91.8783187866211), ('bg', 91.78703427314758), ('bg', 91.60541892051697), ('bg', 91.27594232559204), ('bg', 90.95539450645447), ('bg', 90.3055191040039), ('bg', 89.96094465255737), ('bg', 89.94543552398682), ('bg', 89.79433178901672), ('bg', 86.79426312446594)]
+    all_bg,lt = check_predict(list_predict)
+    print(all_bg)
+    print(len(lt))
+

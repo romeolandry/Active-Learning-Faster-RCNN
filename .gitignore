@@ -128,7 +128,8 @@ logs/*
 *.hdf5
 
 #performance
-performance/*
+#performance/*
+.csv
 
 #my computer workspace
 .vscode
