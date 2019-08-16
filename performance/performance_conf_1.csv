@@ -1,0 +1,5 @@
+unsischerheit_methode;Iteration;Aktuelle_verlust;seed;batch_size;to_Query;num_epochs;abgelaufene Zeit;Anzahl der vorhergesagteten Bildern;Good predicted;Falsh_predicted;not_prediction
+entropie;1;4.8739594101034704;5158;30;20;50;1669.5894260406494;20;0;0;20
+entropie;2;4.4937302176534875;5178;30;20;50;1973.1153490543365;20;0;0;20
+entropie;3;4.4937302176534875;5198;30;20;50;1093.0728800296783;20;0;0;20
+entropie;4;4.4937302176534875;5218;30;20;50;1093.9064648151398;20;0;0;20

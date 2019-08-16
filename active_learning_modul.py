@@ -32,7 +32,7 @@ pathToDataSet = sys.argv[1]
 #pathToDataSet= '/media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 base_path=os.getcwd()
 #test_path='/home/kamgo/test_image'
-pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
+pathToPermformance = os.path.join(base_path, 'performance/performance_conf_1.csv')
 #pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 #pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
 
@@ -40,7 +40,7 @@ pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
 batch_size = 30 # Prozenzahl von Daten  pro batch_lement
 train_size_pro_batch = 20 # N-Prozen von batch-size element
-to_Query = 2 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+to_Query = 20 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 
 loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
@@ -61,7 +61,7 @@ output_weight_path = os.path.join(base_path, 'models/model_frcnn_out.hdf5')
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 1
+num_epochs = 50
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
