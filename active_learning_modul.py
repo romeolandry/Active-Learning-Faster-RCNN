@@ -199,5 +199,5 @@ if __name__ == "__main__":
         else:
             not_change+=1     
         if loos_not_change <= not_change:
-            print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(loos_not_change))
+            print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
             break
