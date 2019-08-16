@@ -1,8 +1,4 @@
 from __future__ import division
-from numpy.random import seed
-seed(200)
-from tensorflow import set_random_seed
-set_random_seed(200)
 import random
 import pprint
 import sys
@@ -25,7 +21,7 @@ from keras.utils import generic_utils
 from keras.callbacks import TensorBoard
 from keras.callbacks import EarlyStopping
 
-
+tf.compat.v1.set_random_seed(200)
 # tensorboard
 def write_log(callback, names, logs, batch_no):
     for name, value in zip(names, logs):
@@ -130,7 +126,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 2
+    epoch_length = 1
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
