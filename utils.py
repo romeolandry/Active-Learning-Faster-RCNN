@@ -307,7 +307,6 @@ def check_predict(list_pred):
     for el in list_pred:
         if el[0] == 'bg':
             list_found_bg+=1
-    print(list_found_bg)
 
     if len(list_pred)== list_found_bg:
         all_bg = True

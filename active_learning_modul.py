@@ -38,9 +38,9 @@ pathToPermformance = os.path.join(base_path, 'performance/performance_conf_1.csv
 
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
-batch_size = 30 # Prozenzahl von Daten  pro batch_lement
-train_size_pro_batch = 20 # N-Prozen von batch-size element
-to_Query = 20 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+batch_size = 50 # Prozenzahl von Daten  pro batch_lement
+train_size_pro_batch = 100 # N-Prozen von batch-size element
+to_Query = 100 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 
 loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
@@ -61,7 +61,7 @@ output_weight_path = os.path.join(base_path, 'models/model_frcnn_out.hdf5')
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 50
+num_epochs = 200
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
@@ -130,14 +130,13 @@ def oracle(pool,prediction_list,batch_size,uncertainty_m,trainingsmenge):
             if ntpath.basename(el['filepath']) == ntpath.basename(pred[0]):
                 to_find-=1
                 neue_seed.append(el)
-                print("________________Vorhergesagtete Klassen für das Bild : {}".format(ntpath.basename(el['filepath'])))
                 all_bg,list_not_bg = utils.check_predict(pred[1])
-                print(all_bg)
                 if all_bg == True:
                     not_predict+=1
-                    print ("Model hat nur bg bg anerkannt")
+                    print ("Model hat nur bg anerkannt")
                 else:
-                    for val in list_not_bg:                      
+                    for val in list_not_bg:
+                        print("________________Vorhergesagtete Klassen für das Bild : {}".format(ntpath.basename(el['filepath'])))                      
                         for cl in el['bboxes']:
                             if cl['class']== val[0]:
                                 print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
@@ -207,6 +206,7 @@ if __name__ == "__main__":
             print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(best_loss, cur_loos))
             best_loss= cur_loos
             con.base_net_weights = con.model_path
+            not_change = loos_not_change
             print("neue  base net weight: {}".format(con.base_net_weights))                  
         else:
             not_change+=1     
