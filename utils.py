@@ -14,6 +14,57 @@ import operator
 from operator import itemgetter
 import random
 
+from keras import backend as K
+from keras.backend.tensorflow_backend import set_session
+from keras.backend.tensorflow_backend import clear_session
+from keras.backend.tensorflow_backend import get_session
+import tensorflow
+
+
+# Reset Keras Session
+def reset_keras():
+    sess = get_session()
+    clear_session()
+    sess.close()
+    sess = get_session()
+
+    try:
+        del classifier # this is from global space - change this as you need
+    except:
+        pass
+
+    #print(gc.collect()) # if it's done something you should see a number being outputted
+    ###################################
+    # TensorFlow wizardry
+    config = tensorflow.ConfigProto()
+ 
+    # Don't pre-allocate memory; allocate as-needed
+    config.gpu_options.allow_growth = True
+ 
+    # Only allow a total of half the GPU memory to be allocated
+    #config.gpu_options.per_process_gpu_memory_fraction = 0.5
+ 
+    # Create a session with the above options specified.
+    K.tensorflow_backend.set_session(tensorflow.Session(config=config))
+
+    # # use the same config as you used to create the session
+    # config = tensorflow.ConfigProto()
+    # config.gpu_options.per_process_gpu_memory_fraction = 1
+    # config.gpu_options.visible_device_list = "0"
+    # set_session(tensorflow.Session(config=config))
+
+# clear gpu
+def clear_keras():
+    sess = get_session()
+    clear_session()
+    sess.close()
+
+    config = tensorflow.ConfigProto(
+        device_count = {'GPU': -1}
+    )
+    #sess = tensorflow.Session(config=config)
+    K.tensorflow_backend.set_session(tensorflow.Session(config=config))
+
 def entropy_sampling(prediction):
     """ Diese Funktion rechnet die Entropie einer Prediction 
         für jedes Bilde wird einen list von Vorgesagtete class und ihre entsprechende Wahrscheinlichkeit

@@ -381,4 +381,5 @@ def make_predicton(file_paht,con):
             cv2.rectangle(img, (textOrg[0] - 5,textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (255, 255, 255), -1)
             cv2.putText(img, textLabel, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1) """
 
-    return all_dets[:3]
+    #return all_dets[:3]
+    return all_dets

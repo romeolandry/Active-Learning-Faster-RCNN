@@ -24,7 +24,6 @@ import keras_frcnn.roi_helpers as roi_helpers
 from keras.utils import generic_utils
 from keras.callbacks import TensorBoard
 from keras.callbacks import EarlyStopping
-#from keras.applications.resnet50 import ResNet50
 
 
 # tensorboard
@@ -131,7 +130,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 1000
+    epoch_length = 10
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
@@ -141,7 +140,10 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     rpn_accuracy_for_epoch = []
     start_time = time.time()
     
-
+    # early stopping 
+    #keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
+    patience = 5
+    
     class_mapping_inv = {v: k for k, v in class_mapping.items()}
     print('Starting training')
 
@@ -271,14 +273,14 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
                     best_loss = curr_loss
                     con.best_loss = best_loss
                     model_all.save_weights(con.model_path)
-                # simple early stopping
-                es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
-
+                    patience = 2
+                else:
+                    patience = patience -1
                 break
-
-            # except Exception as e:
-            #     print('Exception: {}'.format(e))
-            #     continue
+        if patience == 0:
+            print("training stopped due early stopping")
+            break           
+                
 
     print('Training complete, exiting.')
     return best_loss,con

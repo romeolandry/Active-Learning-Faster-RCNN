@@ -28,20 +28,21 @@ import pickle
 import cv2
 from operator import itemgetter
 
+pathToDataSet = sys.argv[1]
+#pathToDataSet= '/media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 base_path=os.getcwd()
 #test_path='/home/kamgo/test_image'
 pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
-pathToDataSet= '/home/kamgo/VOCdevkit'
 #pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 #pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
 
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
-batch_size = 40 # Prozenzahl von Daten  pro batch_lement
+batch_size = 30 # Prozenzahl von Daten  pro batch_lement
 train_size_pro_batch = 20 # N-Prozen von batch-size element
-to_Query = 100 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+to_Query = 20 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 
-loos_not_change = 10 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
+loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
 seed_imgs =[]
 seed_classes_count={}
@@ -60,10 +61,10 @@ output_weight_path = os.path.join(base_path, 'models/model_frcnn_out.hdf5')
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 1000
+num_epochs = 10
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
-num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16 .
+num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
 
 def train_vorbereitung ():
@@ -79,7 +80,8 @@ def train_vorbereitung ():
     con.network = network
     con.num_epochs= num_epochs
     # loard weight 
-    con.base_net_weights = base_weight_path
+    #con.base_net_weights = base_weight_path
+    con.base_net_weights = output_weight_path #weiter training
     #con.base_net_weights ='/home/kamgo/Downloads/resnet50_coco_best_v2.0.1.h5'
 
     with open(config_output_filename, 'wb') as config_f:
@@ -149,27 +151,31 @@ if __name__ == "__main__":
     #batchtify,classes_count,class_mapping = utils.create_batchify_from_path(pathToDataSet,batch_size)
     #print(" Es gibt: ", len(batchtify), "Batch von je: ", len(batchtify[0]), " Bilder")
     #batch_numb = 0
-    best_loss = np.Inf
+    best_loss = np.Inf # 
+    #best_loss = 3.00 # last loss
     cur_loos = 0
     iteration = 0
     not_change = 0  
     con = train_vorbereitung()
     all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
+    # release gpu memory
+    
     #test
     #print("the next Batch: ", batch_numb)
     print("size of train data: {}".format(len(seed_imgs)))
     print("size of data reste data {}".format(len(all_imgs)))
     while (len(all_imgs)!=0):
         # train
+        utils.reset_keras()
         iteration += 1
         start_time = time.time()
         print("size of train data: {}".format(len(seed_imgs)))
         print("size of data reste data {}".format(len(all_imgs)))
         cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss)
         #test
+        utils.clear_keras()
         #test = test.test_model(test_path,con)
         # Anwendung des Models
-        print("Herstellung von Pool")
         pool = all_imgs[:to_Query]
         all_imgs = all_imgs[to_Query:]
         print("size of data to predict {}".format(len(pool)))
@@ -181,18 +187,17 @@ if __name__ == "__main__":
         # die batch-size Element, die von der Oracle überprüfen wurden,werden in der trainingsmenge übertragen       
         #seed_imgs=pool_based_sampling(list_predict_sort,unsischerheit_methode)
         seed_classes_count,seed_classes_mapping=utils.create_mapping_cls(seed_imgs)      
-        performamce ={'unsischerheit_methode':unsischerheit_methode,'Iteration':iteration,'Aktuelle Ungenaueheit':cur_loos,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Gut predicted':truepositiv}
+        performamce ={'unsischerheit_methode':unsischerheit_methode,'Iteration':iteration,'Aktuelle_verlust':cur_loos,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Gut predicted':truepositiv}
         utils.appendDFToCSV_void(performamce,pathToPermformance)            
         #Abbruch Krieterium
-        if best_loss != cur_loos:
-            if best_loss>cur_loos:
-                # Verbesserung des Models 
-                print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(best_loss, cur_loos))
-                best_loss= cur_loos
-                con.base_net_weights = con.model_path
-                print("neue  base net weight: {}".format(con.base_net_weights))                  
-            else:
-                not_change+=1     
+        if best_loss>cur_loos:
+            # Verbesserung des Models 
+            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(best_loss, cur_loos))
+            best_loss= cur_loos
+            con.base_net_weights = con.model_path
+            print("neue  base net weight: {}".format(con.base_net_weights))                  
+        else:
+            not_change+=1     
         if loos_not_change <= not_change:
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(loos_not_change))
             break
