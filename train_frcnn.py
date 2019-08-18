@@ -136,7 +136,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 500
+    epoch_length = 10
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
@@ -148,7 +148,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     
     # early stopping 
     #keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
-    patience = 50
+    patience = 5
     change = 0
     
     class_mapping_inv = {v: k for k, v in class_mapping.items()}
@@ -280,11 +280,12 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
                     best_loss = curr_loss
                     con.best_loss = best_loss
                     model_all.save_weights(con.model_path)
-                    change = patience
+                    change = 0
                 else:
                     change += 1
                 break
         if patience == change:
+            print("Patience {} change {}".format(patience,change))
             print("training stopped by early stopping")
             break           
                 
