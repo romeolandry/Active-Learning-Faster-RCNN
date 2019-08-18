@@ -3,6 +3,5 @@ Keras
 numpy
 opencv-python
 sklearn
-tensorflow
 pandas
 matplotlib

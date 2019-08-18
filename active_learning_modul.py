@@ -9,6 +9,7 @@ import utils
 from keras import backend as K
 import time
 from keras.callbacks import TensorBoard
+from keras_frcnn import config
 
 import pandas as pd
 import numpy as np
@@ -33,6 +34,7 @@ pathToDataSet = sys.argv[1]
 base_path=os.getcwd()
 #test_path='/home/kamgo/test_image'
 pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
+pathTohyperparm = os.path.join(base_path, 'Parameter/param_'+ sys.argv[2]+'.csv')
 #pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 #pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
 
@@ -40,7 +42,7 @@ pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
 batch_size =30 # Prozenzahl von Daten  pro batch_lement
 train_size_pro_batch = 50 # N-Prozen von batch-size element
-to_Query = 5 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+to_Query = 100 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 
 loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
@@ -59,13 +61,15 @@ rot_90 = True           # Augment with 90 degree rotations in training.
 output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
 
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
-base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
+base_weight_path = os.path.join(base_path, 'models/resnet50_weights_th_dim_ordering_th_kernels_notop.h5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 50
+num_epochs = 500
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
-num_rois = 8 # Number of RoIs to process at once default 32 I reduice it to 16.
+num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
+print("save hyperparameter")
+config_img = config.Config()
 
 def train_vorbereitung ():
     con = config.Config()
@@ -198,7 +202,7 @@ if __name__ == "__main__":
         # die batch-size Element, die von der Oracle überprüfen wurden,werden in der trainingsmenge übertragen       
         #seed_imgs=pool_based_sampling(list_predict_sort,unsischerheit_methode)
         seed_classes_count,seed_classes_mapping=utils.create_mapping_cls(seed_imgs)      
-        performamce ={'unsischerheit_methode':unsischerheit_methode,'Iteration':iteration,'Aktuelle_verlust':cur_loos,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
+        performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':cur_loos,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
         utils.appendDFToCSV_void(performamce,pathToPermformance)            
         #Abbruch Krieterium
         if best_loss>cur_loos:

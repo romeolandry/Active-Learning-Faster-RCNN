@@ -12,11 +12,11 @@ import utils
 
 import tensorflow as tf
 from keras import backend as K
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
+tf_config = tf.ConfigProto()
+tf_config.gpu_options.allow_growth = True
 tf.compat.v1.set_random_seed(2000)
 #config.gpu_options.per_process_gpu_memory_fraction = 0.5
-sess = tf.Session(config=config)
+sess = tf.Session(config=tf_config)
 K.set_session(sess)
 
 print("available gpu divice: {}".format(tf.test.gpu_device_name()))
@@ -136,7 +136,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 50
+    epoch_length = 500
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
