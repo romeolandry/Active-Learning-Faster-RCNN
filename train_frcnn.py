@@ -283,8 +283,8 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss,iteration
                 else:
                     change += 1
                 break
-        if Earlyst_patience != None:
-            if Earlyst_patience == change:
+        if Earlystopping_patience != None:
+            if Earlystopping_patience == change:
                 print("training stopped by early stopping")
                 break           
                 

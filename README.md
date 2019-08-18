@@ -8,7 +8,7 @@ USAGE:
     - python active_learning_modul.py argv1 argv2 argv3 performancefilename modelfilename
     - argv1  = /media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit corresponding to path to VOC2012 directory
     - argv2 = name of perfomance csv file
-    - arg3 = name of model to save  
+    - argv33 = name of model to save  
 
 
 
