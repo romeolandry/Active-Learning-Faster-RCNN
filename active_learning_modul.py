@@ -61,9 +61,10 @@ rot_90 = True           # Augment with 90 degree rotations in training.
 output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
 
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
-base_weight_path = os.path.join(base_path, 'models/resnet50_weights_th_dim_ordering_th_kernels_notop.h5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
+base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 10
+num_epochs = 500
+Earlystopping_patience= 50
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
@@ -185,7 +186,7 @@ if __name__ == "__main__":
         start_time = time.time()
         print("size of train data: {}".format(len(seed_imgs)))
         print("size of data reste data {}".format(len(all_imgs)))
-        cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss)
+        cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss,num_epochs,Earlystopping_patience)
         #test
         #utils.reset_keras()
         #utils.clear_keras()

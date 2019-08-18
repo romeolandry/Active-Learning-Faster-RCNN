@@ -12,11 +12,11 @@ import utils
 
 import tensorflow as tf
 from keras import backend as K
-tf_config = tf.ConfigProto()
+tf_config = tf.compat.v1.ConfigProto()
 tf_config.gpu_options.allow_growth = True
 tf.compat.v1.set_random_seed(2000)
 #config.gpu_options.per_process_gpu_memory_fraction = 0.5
-sess = tf.Session(config=tf_config)
+sess = tf.compat.v1.Session(config=tf_config)
 K.set_session(sess)
 
 print("available gpu divice: {}".format(tf.test.gpu_device_name()))
@@ -41,7 +41,7 @@ def write_log(callback, names, logs, batch_no):
         callback.writer.add_summary(summary, batch_no)
         callback.writer.flush()
 
-def train_model(seed_data, classes_count, class_mapping, con,best_loss):
+def train_model(seed_data, classes_count, class_mapping, con,best_loss,iteration,Earlystopping_patience):
     sys.setrecursionlimit(40000)
     #utils.reset_keras()
     from keras_frcnn import losses as losses    
@@ -136,7 +136,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 10
+    epoch_length = iteration
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
@@ -148,7 +148,6 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     
     # early stopping 
     #keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
-    patience = 5
     change = 0
     
     class_mapping_inv = {v: k for k, v in class_mapping.items()}
@@ -284,10 +283,10 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
                 else:
                     change += 1
                 break
-        if patience == change:
-            print("Patience {} change {}".format(patience,change))
-            print("training stopped by early stopping")
-            break           
+        if Earlyst_patience != None:
+            if Earlyst_patience == change:
+                print("training stopped by early stopping")
+                break           
                 
 
     print('Training complete, exiting.')
