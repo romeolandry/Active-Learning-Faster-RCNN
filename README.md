@@ -5,3 +5,10 @@ Es wurde ein Keras Faster-RCNN (keras-frcnn) benuzt,die wurde geclont von https:
 USAGE:
 - Both theano and tensorflow backends are supported. However compile times are very high in theano, and tensorflow is highly recommended.
 - `active_learning_modul.py` can be used to train a model. To train on Pascal VOC data,
+
+
+Issue:
+"tensorflow.python.framework.errors_impl.InvalidArgumentError: Shape must be rank 1 but is rank 0 for 'bn_conv1/Reshape_4' (op: 'Reshape') with input shapes: [1,1,1,64], []."
+#cause
+keras version 
+- change (-1) to [-1] in file "tensorflow_backend.py" on line 1908,1910, 1914, 1918

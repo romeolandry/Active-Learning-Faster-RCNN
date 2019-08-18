@@ -126,6 +126,7 @@ logs/*
 # hdf5
 *.h5
 *.hdf5
+*.out
 
 #performance
 #performance/*

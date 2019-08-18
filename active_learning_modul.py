@@ -32,15 +32,15 @@ pathToDataSet = sys.argv[1]
 #pathToDataSet= '/media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 base_path=os.getcwd()
 #test_path='/home/kamgo/test_image'
-pathToPermformance = os.path.join(base_path, 'performance/performance_conf_1.csv')
+pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
 #pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 #pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
 
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
-batch_size = 50 # Prozenzahl von Daten  pro batch_lement
-train_size_pro_batch = 100 # N-Prozen von batch-size element
-to_Query = 100 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+batch_size =30 # Prozenzahl von Daten  pro batch_lement
+train_size_pro_batch = 50 # N-Prozen von batch-size element
+to_Query = 5 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 
 loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung von perfomance
 
@@ -56,15 +56,15 @@ class_mapping ={}
 horizontal_flips = True # Augment with horizontal flips in training. 
 vertical_flips = True   # Augment with vertical flips in training. 
 rot_90 = True           # Augment with 90 degree rotations in training. 
-output_weight_path = os.path.join(base_path, 'models/model_frcnn_out.hdf5')
+output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
 
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
 config_output_filename = os.path.join(base_path, 'models/model_frcnn.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 200
+num_epochs = 50
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
-num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
+num_rois = 8 # Number of RoIs to process at once default 32 I reduice it to 16.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
 
 def train_vorbereitung ():
@@ -80,8 +80,8 @@ def train_vorbereitung ():
     con.network = network
     con.num_epochs= num_epochs
     # loard weight 
-    #con.base_net_weights = base_weight_path
-    con.base_net_weights = output_weight_path #weiter training
+    con.base_net_weights = base_weight_path
+    #con.base_net_weights = output_weight_path #weiter training
     #con.base_net_weights ='/home/kamgo/Downloads/resnet50_coco_best_v2.0.1.h5'
 
     with open(config_output_filename, 'wb') as config_f:
@@ -169,22 +169,22 @@ if __name__ == "__main__":
     not_change = 0  
     con = train_vorbereitung()
     all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
-    # release gpu memory
-    
+    # release gpu memory    
     #test
     #print("the next Batch: ", batch_numb)
     print("size of train data: {}".format(len(seed_imgs)))
     print("size of data reste data {}".format(len(all_imgs)))
     while (len(all_imgs)!=0):
         # train
-        utils.reset_keras()
+        #utils.reset_keras()
         iteration += 1
         start_time = time.time()
         print("size of train data: {}".format(len(seed_imgs)))
         print("size of data reste data {}".format(len(all_imgs)))
         cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss)
         #test
-        utils.clear_keras()
+        utils.reset_keras()
+        #utils.clear_keras()
         #test = test.test_model(test_path,con)
         # Anwendung des Models
         pool = all_imgs[:to_Query]
@@ -207,9 +207,10 @@ if __name__ == "__main__":
             best_loss= cur_loos
             con.base_net_weights = con.model_path
             not_change = loos_not_change
-            print("neue  base net weight: {}".format(con.base_net_weights))                  
+            print("neue  base net weight: {}".format(con.base_net_weights))
+            not_change = 0                  
         else:
-            not_change+=1     
+            not_change +=1     
         if loos_not_change <= not_change:
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
             break

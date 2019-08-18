@@ -46,12 +46,13 @@ def reset_keras():
  
     # Create a session with the above options specified.
     K.tensorflow_backend.set_session(tensorflow.Session(config=config))
+    print("available gpu divice: {}".format(tensorflow.test.gpu_device_name()))
 
-    # # use the same config as you used to create the session
-    # config = tensorflow.ConfigProto()
-    # config.gpu_options.per_process_gpu_memory_fraction = 1
-    # config.gpu_options.visible_device_list = "0"
-    # set_session(tensorflow.Session(config=config))
+    # use the same config as you used to create the session
+    config = tensorflow.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = 1
+    config.gpu_options.visible_device_list = "0"
+    set_session(tensorflow.Session(config=config))
 
 # clear gpu
 def clear_keras():
@@ -59,11 +60,11 @@ def clear_keras():
     clear_session()
     sess.close()
 
-    config = tensorflow.ConfigProto(
-        device_count = {'GPU': -1}
-    )
-    #sess = tensorflow.Session(config=config)
-    K.tensorflow_backend.set_session(tensorflow.Session(config=config))
+    # config = tensorflow.ConfigProto(
+    #     device_count = {'GPU': -1}
+    # )
+    # #sess = tensorflow.Session(config=config)
+    # K.tensorflow_backend.set_session(tensorflow.Session(config=config))
 
 def entropy_sampling(prediction):
     """ Diese Funktion rechnet die Entropie einer Prediction 

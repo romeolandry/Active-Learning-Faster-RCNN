@@ -8,9 +8,19 @@ from optparse import OptionParser
 import pickle
 import os
 import keras
+import utils
 
 import tensorflow as tf
 from keras import backend as K
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+tf.compat.v1.set_random_seed(2000)
+#config.gpu_options.per_process_gpu_memory_fraction = 0.5
+sess = tf.Session(config=config)
+K.set_session(sess)
+
+print("available gpu divice: {}".format(tf.test.gpu_device_name()))
+
 from keras.optimizers import Adam, SGD, RMSprop
 from keras.layers import Input
 from keras.models import Model
@@ -21,7 +31,6 @@ from keras.utils import generic_utils
 from keras.callbacks import TensorBoard
 from keras.callbacks import EarlyStopping
 
-tf.compat.v1.set_random_seed(2000)
 # tensorboard
 def write_log(callback, names, logs, batch_no):
     for name, value in zip(names, logs):
@@ -34,6 +43,7 @@ def write_log(callback, names, logs, batch_no):
 
 def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     sys.setrecursionlimit(40000)
+    #utils.reset_keras()
     from keras_frcnn import losses as losses    
     
     if con.network == 'vgg':
@@ -126,7 +136,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = 200
+    epoch_length = 50
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
@@ -275,7 +285,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss):
                     change += 1
                 break
         if patience == change:
-            print("training stopped due early stopping")
+            print("training stopped by early stopping")
             break           
                 
 
