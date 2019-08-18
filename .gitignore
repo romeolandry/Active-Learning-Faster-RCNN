@@ -121,7 +121,7 @@ logs/*
 #train_images_txt
 
 #Model config
-#*.pickle
+*.pickle
 
 # hdf5
 *.h5
