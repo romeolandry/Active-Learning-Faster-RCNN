@@ -14,7 +14,7 @@ USAGE:
  to  test:
     - python AL_test.py -p patho to directory file -c path to .pickle file
 
-#Issue
+# Issue
 "tensorflow.python.framework.errors_impl.InvalidArgumentError: Shape must be rank 1 but is rank 0 for 'bn_conv1/Reshape_4' (op: 'Reshape') with input shapes: [1,1,1,64], []."
 -cause
     keras version 2.2.4
