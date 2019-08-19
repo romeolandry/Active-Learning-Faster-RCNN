@@ -1,8 +1,8 @@
 import sys
-sys.path.append(os.getcwd())
 from operator import itemgetter
 from keras_frcnn.pascal_voc_parser import get_data
 import os
+sys.path.append(os.getcwd())
 import glob
 import errno
 import ntpath
