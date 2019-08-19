@@ -21,7 +21,7 @@ print("available gpu divice: {}".format(tf.test.gpu_device_name()))
 from keras.layers import Input
 from keras.models import Model
 from keras_frcnn import roi_helpers
-import test_frcnn as test
+from keras_frcnn import test_frcnn as test
 import utils
 base_path=os.getcwd()
 sys.setrecursionlimit(40000)

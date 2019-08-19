@@ -3,8 +3,8 @@
 import sys
 import os
 sys.path.append(os.getcwd())
-import train_frcnn as train
-import test_frcnn as test
+from keras_frcnn import train_frcnn as train
+from keras_frcnn import test_frcnn as test
 import utils
 from keras import backend as K
 import time
