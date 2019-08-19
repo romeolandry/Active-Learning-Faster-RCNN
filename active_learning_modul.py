@@ -86,6 +86,7 @@ def train_vorbereitung ():
     con.num_epochs= num_epochs
     # loard weight 
     con.base_net_weights = base_weight_path
+    con.class_mapping = 0
     #con.base_net_weights = output_weight_path #weiter training
     #con.base_net_weights ='/home/kamgo/Downloads/resnet50_coco_best_v2.0.1.h5'
 
@@ -162,7 +163,54 @@ def oracle(pool,prediction_list,batch_size,uncertainty_m,trainingsmenge):
     print(len(pool))
     return truePositiv, trueNegativ,not_predict,trainingsmenge
            
-if __name__ == "__main__":
+def trian_simple():
+    best_loss = np.Inf
+    cur_loos = 0
+    iteration = 0
+    not_change = 0  
+    con = train_vorbereitung()
+    all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
+    con.class_mapping = class_mapping
+    utils.update_config_file(config_output_filename,con)
+    print("size of train data: {}".format(len(seed_imgs)))
+    print("size of data reste data {}".format(len(all_imgs)))
+    while (len(all_imgs)!=0):
+        iteration += 1
+        start_time = time.time()
+        print("size of train data: {}".format(len(seed_imgs)))
+        print("size of data reste data {}".format(len(all_imgs)))
+        cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss,num_epochs,Earlystopping_patience)
+        # Anwendung des Models
+        pool = all_imgs[:to_Query]
+        all_imgs = all_imgs[to_Query:]
+        print("size of data to predict {}".format(len(pool)))
+        predict_list = make_prediction(unsischerheit_methode,pool,con)
+        # Query to Oracle: zurückgegeben wird anzahl der rictige vorhergesahte Klasse und die neue Trainingsmenge
+        print("Abfrage an der Oracle")
+        print("size of data {}".format(len(predict_list)))
+        truePositiv, trueNegativ,not_predict,seed_imgs = oracle(pool,predict_list,to_Query,unsischerheit_methode,seed_imgs)
+        # die batch-size Element, die von der Oracle überprüfen wurden,werden in der trainingsmenge übertragen       
+        #seed_imgs=pool_based_sampling(list_predict_sort,unsischerheit_methode)
+        seed_classes_count,seed_classes_mapping=utils.create_mapping_cls(seed_imgs)      
+        performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':cur_loos,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
+        utils.appendDFToCSV_void(performamce,pathToPermformance)            
+        #Abbruch Krieterium
+        if best_loss>cur_loos:
+            # Verbesserung des Models 
+            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(best_loss, cur_loos))
+            best_loss= cur_loos
+            con.base_net_weights = con.model_path
+            not_change = loos_not_change
+            utils.update_config_file(config_output_filename,con)
+            print("neue  base net weight: {}".format(con.base_net_weights))
+            not_change = 0                  
+        else:
+            not_change +=1     
+        if loos_not_change <= not_change:
+            print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
+            break
+
+def train_batch():
     #Erstellung von Seed und unlabellierte Datenmege
     #batchtify,classes_count,class_mapping = utils.create_batchify_from_path(pathToDataSet,batch_size)
     #print(" Es gibt: ", len(batchtify), "Batch von je: ", len(batchtify[0]), " Bilder")
@@ -219,3 +267,5 @@ if __name__ == "__main__":
         if loos_not_change <= not_change:
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
             break
+if __name__ == "__main__":
+    trian_simple()

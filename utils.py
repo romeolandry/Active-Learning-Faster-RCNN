@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/home/kamgo/activ_lerning _object_dection/keras-frcnn")
+sys.path.append(os.getcwd())
 from operator import itemgetter
 from keras_frcnn.pascal_voc_parser import get_data
 import os
@@ -13,6 +13,7 @@ import pandas as pd
 import operator
 from operator import itemgetter
 import random
+import pickle
 
 from keras import backend as K
 from keras.backend.tensorflow_backend import set_session
@@ -314,6 +315,11 @@ def check_predict(list_pred):
 
     return all_bg,list_not_bg
 
+def update_config_file(pathtofile,con):
+    print("update config file")
+    with open(pathtofile, 'wb') as config_f:
+        pickle.dump(con, config_f)  
+    return con
 if __name__ == "__main__":
 
     #base_path=os.getcwd()
