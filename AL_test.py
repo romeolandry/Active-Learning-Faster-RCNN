@@ -7,29 +7,40 @@ import pickle
 from optparse import OptionParser
 import time
 from keras_frcnn import config
+import tensorflow as tf
 from keras import backend as K
+tf_config = tf.compat.v1.ConfigProto()
+tf_config.gpu_options.allow_growth = True
+tf.compat.v1.set_random_seed(2000)
+#config.gpu_options.per_process_gpu_memory_fraction = 0.5
+sess = tf.compat.v1.Session(config=tf_config)
+K.set_session(sess)
+
+print("available gpu divice: {}".format(tf.test.gpu_device_name()))
+
 from keras.layers import Input
 from keras.models import Model
 from keras_frcnn import roi_helpers
 import test_frcnn as test
 import utils
-
+base_path=os.getcwd()
 sys.setrecursionlimit(40000)
 
 parser = OptionParser()
 
 parser.add_option("-p", "--path", dest="test_path", help="Path to test data.")
 
-parser.add_option("--config_filename", dest="config_filename", help=
+parser.add_option("-c", "--config_filename", dest="config_filename", help=
 				"Location to read the metadata related to the training (generated when training).",
-				default="config.pickle")
+				default=os.path.join(base_path, 'models/config.pickle'))
 
 (options, args) = parser.parse_args()
 
-if not options.test_path:   # if filename is not given
-	parser.error('Error: path to test data must be specified. Pass --path to command line')
+#if not options.test_path:   # if filename is not given
+	#parser.error('Error: path to test data must be specified. Pass --path to command line')
 
 
+#config_output_filename = os.path.join(base_path, 'models/model_frcnn_1.pickle')
 config_output_filename = options.config_filename
 
 with open(config_output_filename, 'rb') as f_in:
@@ -93,16 +104,13 @@ def get_real_coordinates(ratio, x1, y1, x2, y2):
 
 class_mapping = C.class_mapping
 
-print("class  mapping".format(class_mapping))
-exit()
-
 if 'bg' not in class_mapping:
 	class_mapping['bg'] = len(class_mapping)
 
 class_mapping = {v: k for k, v in class_mapping.items()}
 print(class_mapping)
 class_to_color = {class_mapping[v]: np.random.randint(0, 255, 3) for v in class_mapping}
-C.num_rois = int(options.num_rois)
+#C.num_rois = int(options.num_rois)
 
 if C.network == 'resnet50':
 	num_features = 1024
@@ -153,7 +161,7 @@ visualise = True
 for idx, img_name in enumerate(sorted(os.listdir(img_path))):
 	if not img_name.lower().endswith(('.bmp', '.jpeg', '.jpg', '.png', '.tif', '.tiff')):
 		continue
-	print(img_name)
+
 	st = time.time()
 	filepath = os.path.join(img_path,img_name)
 
@@ -245,7 +253,7 @@ for idx, img_name in enumerate(sorted(os.listdir(img_path))):
 
 	print('Elapsed time = {}'.format(time.time() - st))
 	print(all_dets)
-	cv2.imshow('img', img)
-	cv2.waitKey(0)
-	# cv2.imwrite('./results_imgs/{}.png'.format(idx),img)
+	#cv2.imshow('img', img)
+	#cv2.waitKey(0)
+	cv2.imwrite('./results_imgs/{}.png'.format(idx),img)
 
