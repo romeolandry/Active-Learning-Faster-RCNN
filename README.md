@@ -15,10 +15,10 @@ USAGE:
     - python AL_test.py -p patho to directory file -c path to .pickle file
 
 # Issue
-"tensorflow.python.framework.errors_impl.InvalidArgumentError: Shape must be rank 1 but is rank 0 for 'bn_conv1/Reshape_4' (op: 'Reshape') with input shapes: [1,1,1,64], []."
--cause
+- "tensorflow.python.framework.errors_impl.InvalidArgumentError: Shape must be rank 1 but is rank 0 for 'bn_conv1/Reshape_4' (op: 'Reshape') with input shapes:     [1,1,1,64], []."
+- cause
     keras version 2.2.4
--solution
+- solution
     (-1) to [-1] in file "tensorflow_backend.py" on line 1908,1910, 1914, 1918
 
 class maping {'person': 0, 'dog': 1, 'bird': 2, 'chair': 3, 'cat': 4, 'tvmonitor': 5, 'bottle': 6, 'diningtable': 7, 'train': 8, 'pottedplant': 9, 'sheep': 10, 'sofa': 11, 'bicycle': 12, 'aeroplane': 13, 'car': 14, 'bus': 15, 'horse': 16, 'motorbike': 17, 'cow': 18, 'boat': 19} 
