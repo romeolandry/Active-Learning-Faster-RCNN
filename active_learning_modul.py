@@ -6,7 +6,6 @@ sys.path.append(os.getcwd())
 from keras_frcnn import train_frcnn as train
 from keras_frcnn import test_frcnn as test
 import utils
-from keras import backend as K
 import time
 from keras.callbacks import TensorBoard
 from keras_frcnn import config
@@ -28,6 +27,7 @@ import argparse
 import pickle
 import cv2
 from operator import itemgetter
+from numba import jit
 
 pathToDataSet = sys.argv[1]
 #pathToDataSet= '/media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit'
@@ -41,7 +41,7 @@ pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
 batch_size =30 # Prozenzahl von Daten  pro batch_lement
 train_size_pro_batch = 50 # N-Prozen von batch-size element
-to_Query = 1 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+to_Query = 100 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 
 loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung der Leistung
 
@@ -61,9 +61,9 @@ output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
 
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
-config_output_filename = os.path.join(base_path, 'models/model_frcnn_1.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 2
-Earlystopping_patience= 50
+config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+ '.pickle') #Location to store all the metadata related to the training (to be used when testing).
+num_epochs = 1
+Earlystopping_patience= None
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
@@ -77,15 +77,31 @@ def train_vorbereitung ():
     con.use_horizontal_flips = bool(horizontal_flips)
     con.use_vertical_flips = bool(vertical_flips)
     con.rot_90 = bool(rot_90)
+    # zum weiter Training
+    if os.path.exists(config_output_filename):
+        print(" Weiter Training")
+        with open(config_output_filename, 'rb') as f_in:
+            C = pickle.load(f_in)
+            con.model_path = C.model_path
+            con.num_rois = int(C.num_rois)
+            con.network = C.network
+            con.num_epochs= C.num_epochs
+            # loard weight
+            con.base_net_weights = C.model_path
+            con.class_mapping = C.class_mapping
+            con.best_loss = C.best_loss                        
+    else:
+        print("new traininig")
+        con.model_path = output_weight_path
+        con.num_rois = int(num_rois)
+        con.network = network
+        con.num_epochs= num_epochs
+        # loard weight
+        con.base_net_weights = base_weight_path
+        con.class_mapping = 0
+        con.best_loss = np.Inf 
 
-    con.model_path = output_weight_path
-    #con.model_path='/home/kamgo/Downloads/vgg16_weights.h5'
-    con.num_rois = int(num_rois)
-    con.network = network
-    con.num_epochs= num_epochs
-    # loard weight 
-    con.base_net_weights = base_weight_path
-    con.class_mapping = 0
+
     #con.base_net_weights = output_weight_path #weiter training
     #con.base_net_weights ='/home/kamgo/Downloads/resnet50_coco_best_v2.0.1.h5'
 
@@ -94,27 +110,6 @@ def train_vorbereitung ():
         print('Config has been written to {}, and can be loaded when testing to ensure correct results'.format(config_output_filename))
   
     return con
-
-def make_prediction(unsischerheit_methode,list_to_predict,config):
-    """es wurde gespeichert: bilder,vorhergesagtete Klasse mit entsprechende 
-    Wahrscheinlichkeiten, und unsischerheitswert: predict über batch-Element"""
-    print("############# Anfang der Vorhersage #########")
-    list_predicttion_bild_uncert =[]    
-    list_pfad_imgs=[]
-    for img in list_to_predict:
-        list_pfad_imgs.append(img['filepath'])
-        
-    print("Anzahl von bildern zu predict:{}".format(len(list_pfad_imgs)))
-    for filepath in list_pfad_imgs:      
-        preds = test.make_predicton(filepath,config)
-        #print(preds)
-        # unsischerheit rechnen 
-        unsischerheit = utils.berechnung_unsischerheit(preds,unsischerheit_methode)
-        list_predicttion_bild_uncert.append((filepath,preds,unsischerheit))
-      
-    print("Ende der Vorhersage")
-    return list_predicttion_bild_uncert
-
 
 def oracle(pool,prediction_list,batch_size,uncertainty_m,trainingsmenge):
 
@@ -139,6 +134,7 @@ def oracle(pool,prediction_list,batch_size,uncertainty_m,trainingsmenge):
                 if all_bg == True:
                     not_predict+=1
                     print ("Model hat nur bg anerkannt")
+                    continue
                 else:
                     for val in list_not_bg:
                         print("________________Vorhergesagtete Klassen für das Bild : {}".format(ntpath.basename(el['filepath'])))                      
@@ -157,18 +153,16 @@ def oracle(pool,prediction_list,batch_size,uncertainty_m,trainingsmenge):
 
     print("true positive:{}".format(truePositiv))
     trainingsmenge = trainingsmenge + neue_seed
-    for el in neue_seed:
-        pool.remove(el)
-    print(len(pool))
     return truePositiv, trueNegativ,not_predict,trainingsmenge
            
 def trian_simple():
-    best_loss = np.Inf
     cur_loos = 0
     iteration = 0
     not_change = 0  
     con = train_vorbereitung()
-    all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
+    print("base net {} and losse {} ".format(con.base_net_weights ,con.best_loss))
+    #exit()
+    all_imgs,seed_imgs,seed_classes_mapping,seed_classes_count = utils.createSeedPascal_Voc(pathToDataSet,batch_size)
     con.class_mapping = class_mapping
     con = utils.update_config_file(config_output_filename,con)
     print("size of train data: {}".format(len(seed_imgs)))
@@ -178,12 +172,12 @@ def trian_simple():
         start_time = time.time()
         print("size of train data: {}".format(len(seed_imgs)))
         print("size of data reste data {}".format(len(all_imgs)))
-        cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss,num_epochs,Earlystopping_patience)
+        con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,Earlystopping_patience,config_output_filename)
         # Anwendung des Models
         pool = all_imgs[:to_Query]
         all_imgs = all_imgs[to_Query:]
         print("size of data to predict {}".format(len(pool)))
-        predict_list = make_prediction(unsischerheit_methode,pool,con)
+        predict_list=test.make_predicton_new(pool,unsischerheit_methode,con)
         # Query to Oracle: zurückgegeben wird anzahl der rictige vorhergesahte Klasse und die neue Trainingsmenge
         print("Abfrage an der Oracle")
         print("size of data {}".format(len(predict_list)))
@@ -194,9 +188,9 @@ def trian_simple():
         performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':cur_loos,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
         utils.appendDFToCSV_void(performamce,pathToPermformance)            
         #Abbruch Krieterium
-        if best_loss>cur_loos:
+        if con.best_loss>cur_loos:
             # Verbesserung des Models 
-            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(best_loss, cur_loos))
+            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(con.best_loss, cur_loos))
             best_loss= cur_loos
             con.base_net_weights = con.model_path
             not_change = loos_not_change
@@ -209,18 +203,16 @@ def trian_simple():
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
             break
 
-def train_batch():
+""" def train_batch():
     #Erstellung von Seed und unlabellierte Datenmege
     #batchtify,classes_count,class_mapping = utils.create_batchify_from_path(pathToDataSet,batch_size)
     #print(" Es gibt: ", len(batchtify), "Batch von je: ", len(batchtify[0]), " Bilder")
-    #batch_numb = 0
-    best_loss = np.Inf # 
-    #best_loss = 3.00 # last loss
-    cur_loos = 0
-    iteration = 0
-    not_change = 0  
+    #batch_numb = 0 
     con = train_vorbereitung()
-    all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPlascal_Voc(pathToDataSet,batch_size)
+    cur_loos = con.best_loss
+    iteration = 0
+    not_change = 0 
+    all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPascal_Voc(pathToDataSet,batch_size)
     # release gpu memory    
     #test
     #print("the next Batch: ", batch_numb)
@@ -233,7 +225,7 @@ def train_batch():
         start_time = time.time()
         print("size of train data: {}".format(len(seed_imgs)))
         print("size of data reste data {}".format(len(all_imgs)))
-        cur_loos,con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,best_loss,num_epochs,Earlystopping_patience)
+        con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,num_epochs,Earlystopping_patience)
         #test
         #utils.reset_keras()
         #utils.clear_keras()
@@ -253,18 +245,20 @@ def train_batch():
         performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':cur_loos,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
         utils.appendDFToCSV_void(performamce,pathToPermformance)            
         #Abbruch Krieterium
-        if best_loss>cur_loos:
+        if cur_loos>con.best_loss:
             # Verbesserung des Models 
-            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(best_loss, cur_loos))
-            best_loss= cur_loos
+            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(cur_loos,con.best_loss))
+            cur_loos = con.best_loss
             con.base_net_weights = con.model_path
             not_change = loos_not_change
+            con = utils.update_config_file(config_output_filename,con)
             print("neue  base net weight: {}".format(con.base_net_weights))
             not_change = 0                  
         else:
             not_change +=1     
         if loos_not_change <= not_change:
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
-            break
+            break """
 if __name__ == "__main__":
     trian_simple()
+    

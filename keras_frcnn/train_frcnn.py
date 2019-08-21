@@ -41,7 +41,7 @@ def write_log(callback, names, logs, batch_no):
         callback.writer.add_summary(summary, batch_no)
         callback.writer.flush()
 
-def train_model(seed_data, classes_count, class_mapping, con,best_loss,iteration,Earlystopping_patience):
+def train_model(seed_data, classes_count, class_mapping,con,Earlystopping_patience,config_output_filename):
     sys.setrecursionlimit(40000)
     #utils.reset_keras()
     from keras_frcnn import losses as losses    
@@ -136,7 +136,7 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss,iteration
     callback = TensorBoard(log_path)
     callback.set_model(model_all)
 
-    epoch_length = iteration
+    epoch_length = con.num_epochs
     num_epochs = int(con.num_epochs)
     iter_num = 0
     train_step = 0
@@ -273,12 +273,14 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss,iteration
                         loss_class_cls, loss_class_regr, class_acc, curr_loss],
                         epoch_num)
 
-                if curr_loss < best_loss:
+                if curr_loss < con.best_loss:
                     if con.verbose:
-                        print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
-                    best_loss = curr_loss
-                    con.best_loss = best_loss
+                        print('Total loss decreased from {} to {}, saving weights'.format(con.best_loss,curr_loss))
+                    con.best_loss = curr_loss
+                    con = utils.update_config_file(config_output_filename,con)
+                    print("saving weight")
                     model_all.save_weights(con.model_path)
+                    print("weight saved")
                     change = 0
                 else:
                     change += 1
@@ -290,4 +292,4 @@ def train_model(seed_data, classes_count, class_mapping, con,best_loss,iteration
                 
 
     print('Training complete, exiting.')
-    return best_loss,con
+    return con
