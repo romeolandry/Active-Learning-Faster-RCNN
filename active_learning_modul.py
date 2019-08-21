@@ -164,7 +164,6 @@ def trian_simple():
         print("size of train data: {}".format(len(seed_imgs)))
         print("size of data reste data {}".format(len(all_imgs)))
         con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,Earlystopping_patience,config_output_filename)
-        all_imgs = all_imgs[:5]
         print("size of data to predict {}".format(len(all_imgs)))
         predict_list=test.make_predicton_new(all_imgs,con)
         print("Anwendung des Pool_based sampling")
