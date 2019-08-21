@@ -6,7 +6,17 @@ sys.path.append(os.getcwd())
 from keras_frcnn import train_frcnn as train
 from keras_frcnn import test_frcnn as test
 import utils
+
+import tensorflow as tf
 from keras import backend as K
+""" 
+tf_config = tf.compat.v1.ConfigProto()
+tf_config.gpu_options.allow_growth = True
+tf.compat.v1.set_random_seed(2000)
+#config.gpu_options.per_process_gpu_memory_fraction = 0.5
+sess = tf.compat.v1.Session(config=tf_config)
+K.set_session(sess) """
+
 import time
 from keras.callbacks import TensorBoard
 from keras_frcnn import config
