@@ -73,12 +73,13 @@ def entropy_sampling(prediction):
         für jedes Bilde wird einen list von Vorgesagtete class und ihre entsprechende Wahrscheinlichkeit
         [(class,prbability),....] 
     """
-    argmax = 0
+    argmax =0
     summe = 0
     for elt in prediction:
-        if argmax<elt[1]:
-            argmax=elt[1]
-        summe = summe + np.log10(elt[1])*elt[1]
+        pred= elt[1]/100
+        if argmax<pred:
+            argmax=pred
+        summe = summe + np.log10(pred)*pred
     
     entropy = argmax-summe
     return entropy
@@ -90,8 +91,9 @@ def least_confident(prediction):
     """
     argmax = 0
     for elt in prediction:
-        if argmax<elt[1]:
-            argmax=elt[1]
+        pred= elt[1]/100
+        if argmax<pred:
+            argmax=pred
     
     lc = 1-argmax
     return lc
@@ -107,10 +109,10 @@ def margin_sampling (prediction):
     mg=0
     mg_list = prediction[:2]
     for prob in mg_list:
-        mg=prob[2]-mg
+        mg=prob[1]/100-mg
 
     return abs(mg)   
-@jit
+
 def berechnung_unsischerheit(prediction, methode):
     print("-----> berechnung_unsischerheit")
     unsischerheit = 0 
@@ -126,7 +128,6 @@ def berechnung_unsischerheit(prediction, methode):
     
     return unsischerheit
 
-@jit
 def sort_list_sampling(list,sampling_methode):
     print("sortierung nach unsischerheit methode")
     if (sampling_methode=="entropie"):
@@ -134,7 +135,7 @@ def sort_list_sampling(list,sampling_methode):
     elif (sampling_methode=="margin"):
         list = sorted(list,key=itemgetter(1))
     elif (sampling_methode=="least_confident"):
-        list = sorted(list,key=itemgetter(1),reverse=True)
+        list = sberechnung_unsischerheitorted(list,key=itemgetter(1),reverse=True)
     else:
         print("kein gültiges Uncertainty sampling")
     
@@ -250,35 +251,24 @@ def Datei_vorbereitung (seed,Dateitype):
     xml_df.to_csv((basePath +'/'+ Dateitype + '_labels.txt'), index=None, header=False)
     print('Successfully converted xml to txt.')
 
-def Pool_based_sampling_test (listeImage,listscore):
-    imagepostclassifier=[]
-    column_name = ['path', 'boxes', 'labels', 'score']
-    # pool_based sampling scenario and as query strategies I will implement Least confidence(Lc): 
-    for img in listeImage:
-        # load image
-        image = read_image_bgr(img)
-        # copy to draw on
-        draw = image.copy()
-        draw = cv2.cvtColor(draw, cv2.COLOR_BGR2RGB)
+def Pool_based_sampling_test (predict_list, pool_size ,sampling_methode):
+    """predict_list as list [(file_path,prediction)]
+        pool_size integer
+        sampling methode: entropie, marging or least confident
+        Compute uncertainty for each prdiction
+        return Pool to Query to Oracle
+    """
+    # computer
+    Predict_uncertainty_list = []
+    Predict_uncertainty_listsorted =[]
+    for elt in predict_list:
+        uncertainty = berechnung_unsischerheit(elt[1],sampling_methode)
+        print("uncertainty of {} is {}".format(ntpath.basename(elt[0]),uncertainty))
+        Predict_uncertainty_list.append((elt[0], elt[1],uncertainty))
 
-        # preprocess image for network
-        image = preprocess_image(image)
-        image, scale = resize_image(image)
-
-        # process image
-        start = time.time()
-        boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
-        print("processing time: ", time.time() - start)
-
-        # correct for image scale
-        boxes /= scale
-
-        # save into list
-        imagepostclassifier.append(img,boxes[0],labels[0],scores[0])
-
-    df_imgcls = pd.DataFrame(imagepostclassifier,columns=column_name)
-    df_imgcls.sort_values(by=['scores'])
-    return df_imgcls
+    Predict_uncertainty_listsorted = sort_list_sampling(Predict_uncertainty_list,sampling_methode)
+    pool = pool = Predict_uncertainty_listsorted[:pool_size]
+    return pool
 
 def appendDFToCSV_void(dictPerformance, csvFilePath):
     df = pd.DataFrame(dictPerformance, index=[0])
@@ -320,8 +310,17 @@ if __name__ == "__main__":
     #print(pathToPermformance)
     #performamce ={'unsischerheit_methode':5,'Iteration':3,'Aktuelle Ungenaueheit':3,'abgelaufene Zeit':62,'Anzahl der vorhergesagteten Bildern':6,'Gut predicted':8}
     #appendDFToCSV_void(performamce,pathToPermformance)
-    list_predict =[('bg', 94.8340892791748), ('bg', 94.80260014533997), ('bg', 94.77835893630981), ('bg', 94.18602585792542), ('bg', 94.15472745895386), ('bg', 93.88720989227295), ('bg', 93.80043745040894), ('bg', 93.59209537506104), ('bg', 93.47149729728699), ('bg', 93.32671165466309), ('bg', 93.2866632938385), ('bg', 93.24570298194885), ('bg', 93.18247437477112), ('bg', 93.03614497184753), ('bg', 92.92904138565063), ('bg', 92.76766777038574), ('bg', 92.58877635002136), ('bg', 92.36408472061157), ('bg', 91.8783187866211), ('bg', 91.78703427314758), ('bg', 91.60541892051697), ('bg', 91.27594232559204), ('bg', 90.95539450645447), ('bg', 90.3055191040039), ('bg', 89.96094465255737), ('bg', 89.94543552398682), ('bg', 89.79433178901672), ('bg', 86.79426312446594)]
-    all_bg,lt = check_predict(list_predict)
-    print(all_bg)
-    print(len(lt))
+    d1=[]
+    d2=[]
+    list_predict1 =[('bg', 0.9), ('bg', 0.09), ('bg', 0.01)]
+    en1 = entropy_sampling(list_predict)
+    lc1 = least_confident(list_predict)
+    m1 = margin_sampling(list_predict)
+    d1.append(()) 
+    list_predict =[('bg', 0.2), ('bg', 0.5), ('bg', 0.3)]
+    en = entropy_sampling(list_predict)
+    lc = least_confident(list_predict)
+    m = margin_sampling(list_predict)
+    print("entropie is :{} least confident is {} and margin is {}".format(en,lc,m))
+    #print(len(lt))
 

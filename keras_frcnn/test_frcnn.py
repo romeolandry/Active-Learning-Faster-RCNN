@@ -391,7 +391,7 @@ def make_predicton(file_paht,con):
     print("----------> in make prediction ende: {}".format(time.time() - start_time))
     return all_dets
 
-def make_predicton_new(list_to_predict,unsischerheit_methode,con):
+def make_predicton_new(list_to_predict,con):
     print("----------> start predict and computing uncertainty of each image")
     list_predicttion_bild_uncert =[]
     start_time = time.time()
@@ -539,9 +539,6 @@ def make_predicton_new(list_to_predict,unsischerheit_methode,con):
 
                 textLabel = '{}: {}'.format(key,int(100*new_probs[jk]))
                 all_dets.append((key,100*new_probs[jk]))
-                # computer the uncertainty
-                unsischerheit = utils.berechnung_unsischerheit(all_dets,unsischerheit_methode)
-                print("uncertainty of {} ist {}".format(ntpath.basename(file_paht),unsischerheit ))
-                list_predicttion_bild_uncert.append((file_paht,all_dets,unsischerheit))
+        list_predicttion_bild_uncert.append((file_paht,all_dets))
     print("----------> in make prediction ende: {}".format(time.time() - start_time))
     return list_predicttion_bild_uncert
