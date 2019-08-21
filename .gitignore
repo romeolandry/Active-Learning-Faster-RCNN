@@ -131,7 +131,7 @@ logs/*
 
 #performance
 #performance/*
-.csv
+*.csv
 
 #my computer workspace
 .vscode
