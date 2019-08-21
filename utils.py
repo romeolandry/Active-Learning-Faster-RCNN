@@ -14,6 +14,7 @@ import operator
 from operator import itemgetter
 import random
 import pickle
+from numba import jit
 
 from keras import backend as K
 from keras.backend.tensorflow_backend import set_session
@@ -109,8 +110,9 @@ def margin_sampling (prediction):
         mg=prob[2]-mg
 
     return abs(mg)   
-
+@jit
 def berechnung_unsischerheit(prediction, methode):
+    print("-----> berechnung_unsischerheit")
     unsischerheit = 0 
     if (methode=="entropie"):
         unsischerheit = entropy_sampling(prediction)
@@ -124,7 +126,7 @@ def berechnung_unsischerheit(prediction, methode):
     
     return unsischerheit
 
-
+@jit
 def sort_list_sampling(list,sampling_methode):
     print("sortierung nach unsischerheit methode")
     if (sampling_methode=="entropie"):
@@ -201,8 +203,8 @@ def createSeed_pro_batch(batch_elt,classes_count,class_mapping,train_size_pro_ba
     
     return all_imgs, seed_imgs, class_mapping,classes_count,seed_classes_mapping,seed_classes_count
 
-
-def createSeedPlascal_Voc(pathToDataSet,batch_size):
+@jit
+def createSeedPascal_Voc(pathToDataSet,batch_size):
     """ Diese Funktion wird labellierte Data auswählen."""
     print("##### Erstellung von Datenmenge Seed und unlabellierte ####")
     seed_imgs=[]
@@ -224,17 +226,7 @@ def createSeedPlascal_Voc(pathToDataSet,batch_size):
                 seed_classes_count[bb['class']] += 1
             if bb['class'] not in seed_classes_mapping:
                 seed_classes_mapping[bb['class']] = len(seed_classes_mapping)
-    print("Erstellung anotation, class_maping und class_count vom unlabellierte Daten")     
-    for im in all_imgs:
-        for bb in im['bboxes']:
-            if bb['class'] not in classes_count:
-                classes_count[bb['class']] = 1
-            else:
-                classes_count[bb['class']] += 1
-            if bb['class'] not in class_mapping:
-                class_mapping[bb['class']] = len(class_mapping)
-    
-    return all_imgs, seed_imgs, class_mapping,classes_count,seed_classes_mapping,seed_classes_count
+    return all_imgs, seed_imgs,seed_classes_mapping,seed_classes_count
 
 def Datei_vorbereitung (seed,Dateitype):
     """ Erstellung von Matching file .txt zum training oder zum Testen
