@@ -177,7 +177,6 @@ def trian_simple():
         if con.best_loss>cur_loos:
             # Verbesserung des Models 
             print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(con.best_loss, cur_loos))
-            con.best_loss= cur_loos
             con.base_net_weights = con.model_path
             not_change = loos_not_change
             con = utils.update_config_file(config_output_filename,con)
