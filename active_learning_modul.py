@@ -64,7 +64,7 @@ output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
 base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
 config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+ '.pickle') #Location to store all the metadata related to the training (to be used when testing).
 num_epochs = 1
-Earlystopping_patience= None
+Earlystopping_patience= 100
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
@@ -150,10 +150,11 @@ def oracle(pool,all_imgs,trainingsmenge):
     return truePositiv, trueNegativ,not_predict,trainingsmenge,all_imgs
            
 def trian_simple():
-    cur_loos = 0
-    iteration = 0
-    not_change = 0  
+      
     con = train_vorbereitung()
+    cur_loos = con.best_loss
+    iteration = 0
+    not_change = 0
     print("base net {} and losse {} ".format(con.base_net_weights ,con.best_loss))
     all_imgs,seed_imgs,seed_classes_mapping,seed_classes_count = utils.createSeedPascal_Voc(pathToDataSet,batch_size)
     con.class_mapping = class_mapping
@@ -174,9 +175,10 @@ def trian_simple():
         performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':cur_loos,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(pool),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
         utils.appendDFToCSV_void(performamce,pathToPermformance)            
         #Abbruch Krieterium
-        if con.best_loss>cur_loos:
+        if con.best_loss<cur_loos:
             # Verbesserung des Models 
-            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(con.best_loss, cur_loos))
+            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(cur_loos,con.best_loss))
+            cur_loos=con.best_loss
             con.base_net_weights = con.model_path
             not_change = loos_not_change
             con = utils.update_config_file(config_output_filename,con)
