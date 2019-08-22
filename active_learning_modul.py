@@ -42,7 +42,7 @@ pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
 batch_size =30 # Prozenzahl von Daten  pro batch_lement
 train_size_pro_batch = 50 # N-Prozen von batch-size element
-to_Query = 2 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+to_Query = 300 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 
 loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung der Leistung
 

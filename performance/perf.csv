@@ -1,7 +1,0 @@
-unsischerheit_methode;num_roi;img_size;Iteration;Aktuelle_verlust;seed;batch_size;to_Query;num_epochs;abgelaufene Zeit;Anzahl der vorhergesagteten Bildern;Good predicted;Falsh_predicted;not_prediction
-entropie;32;600;1;3.6036163661337923;5139;30;1;5;626.2830865383148;1;0;0;1
-entropie;32;600;1;5.0663075894117355;5139;30;1;2;158.46240043640137;1;0;0;1
-entropie;32;600;2;5.0663075894117355;5140;30;1;2;149.48042035102844;1;0;0;1
-entropie;32;600;1;0;5140;30;2;1;133.41998028755188;2;0;0;0
-entropie;32;600;2;0;5142;30;2;1;153.14024114608765;2;0;0;0
-entropie;32;600;3;0;5143;30;2;1;144.04041457176208;1;0;0;0
