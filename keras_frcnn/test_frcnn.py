@@ -465,7 +465,7 @@ def make_predicton_new(list_to_predict,con):
         list_pfad_imgs.append(img['filepath'])
     count = 1
     for file_paht in list_pfad_imgs: 
-        print("vorhersage von {} über {} von {}".format(count,len(list_to_predict),ntpath.basename(file_paht)))
+        print("vorhersage von {} über {} fürs Bild {}".format(count,len(list_to_predict),ntpath.basename(file_paht)))
         count +=1
         img = cv2.imread(file_paht)
         X, ratio = format_img(img, con)
