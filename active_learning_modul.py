@@ -126,7 +126,7 @@ def oracle(pool,all_imgs,trainingsmenge):
                 neue_seed.append(el)
                 all_imgs.remove(el)
                 all_bg,list_not_bg = utils.check_predict(pred[1])
-                if all_bg == False:
+                if all_bg == True:
                     not_predict+=1
                     print ("Model hat nur bg anerkannt")
                     continue
