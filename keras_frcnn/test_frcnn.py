@@ -465,7 +465,7 @@ def make_predicton_new(list_to_predict,con):
         list_pfad_imgs.append(img['filepath'])
     count = 1
     for file_paht in list_pfad_imgs: 
-        print("vorhersage von {} über {} von {}".format(count,len(list_to_predict),ntpath.basename(file_paht)))
+        print("vorhersage von {} über {} fürs Bild {}".format(count,len(list_to_predict),ntpath.basename(file_paht)))
         count +=1
         img = cv2.imread(file_paht)
         X, ratio = format_img(img, con)
@@ -540,5 +540,5 @@ def make_predicton_new(list_to_predict,con):
                 textLabel = '{}: {}'.format(key,int(100*new_probs[jk]))
                 all_dets.append((key,100*new_probs[jk]))
         list_predicttion_bild_uncert.append((file_paht,all_dets))
-    print("----------> in make prediction ende: {}".format(time.time() - start_time))
+    print("----------> in make prediction finisch: {}".format(time.time() - start_time))
     return list_predicttion_bild_uncert

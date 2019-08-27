@@ -161,37 +161,27 @@ def create_batchify_from_list(listdata,percentTotrain):
     number_of_batch = int(len(listdata)/sizetotrain)
     return [listdata[i::number_of_batch] for i in range(number_of_batch)]
 
-def create_batchify_from_path (pathToDataSet,percentTotrain):
+def create_batch_from_path (pathToDataSet,percentTotrain):
 
     all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
 
     sizetotrain = int(round((len(all_imgs)* percentTotrain)/100))
-    nmber_of_batch = int(len(all_imgs)/sizetotrain)
+    number_of_batch = int(len(all_imgs)/sizetotrain)
    
-    return [all_imgs[i::nmber_of_batch] for i in range(nmber_of_batch)],classes_count,class_mapping
+    return [all_imgs[i::number_of_batch] for i in range(number_of_batch)]
 
-def createSeed_pro_batch(batch_elt,classes_count,class_mapping,train_size_pro_batch):
+def createSeed_pro_batch(batch_elt,train_size_pro_batch):
     """ Diese Funktion wird labellierte Data auswählen."""
     print("##### Erstellung von Datenmenge Seed und unlabellierte ####")
     seed_imgs=[]
     all_imgs =[]
-    seed_classes_count={}
-    seed_classes_mapping={}
     classes_count ={}
     class_mapping ={}
     #all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
     sizetotrain = int(round((len(batch_elt)* train_size_pro_batch)/100))
     seed_imgs = batch_elt[:sizetotrain]
     all_imgs = batch_elt[sizetotrain:]
-    print("Erstellung anotation, class_maping und class_count vom Seed")
-    for seed in seed_imgs:
-        for bb in seed['bboxes']:
-            if bb['class'] not in seed_classes_count:
-                seed_classes_count[bb['class']] = 1
-            else:
-                seed_classes_count[bb['class']] += 1
-            if bb['class'] not in seed_classes_mapping:
-                seed_classes_mapping[bb['class']] = len(seed_classes_mapping)
+
     print("Erstellung anotation, class_maping und class_count vom unlabellierte Daten")     
     for im in batch_elt:
         for bb in im['bboxes']:
@@ -202,7 +192,7 @@ def createSeed_pro_batch(batch_elt,classes_count,class_mapping,train_size_pro_ba
             if bb['class'] not in class_mapping:
                 class_mapping[bb['class']] = len(class_mapping)
     
-    return all_imgs, seed_imgs, class_mapping,classes_count,seed_classes_mapping,seed_classes_count
+    return all_imgs, seed_imgs, class_mapping,classes_count
 
 @jit
 def createSeedPascal_Voc(pathToDataSet,batch_size):

@@ -30,6 +30,9 @@ import cv2
 from operator import itemgetter
 from numba import jit
 
+import random
+#random.seed( 30 )
+
 pathToDataSet = sys.argv[1]
 #pathToDataSet= '/media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 base_path=os.getcwd()
@@ -41,7 +44,7 @@ pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
 batch_size =30 # Prozenzahl von Daten  pro batch_lement
-train_size_pro_batch = 50 # N-Prozen von batch-size element
+train_size_pro_batch = 20 # N-Prozen von batch-size element
 to_Query = 300 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
 
 loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung der Leistung
@@ -59,12 +62,16 @@ horizontal_flips = True # Augment with horizontal flips in training.
 vertical_flips = True   # Augment with vertical flips in training. 
 rot_90 = True           # Augment with 90 degree rotations in training. 
 output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
+if sys.argv[4] == None:
+    train_mode = 'simple'
+else:
+    train_mode = sys.argv[4] # can be simple or batch
 
 #record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
-base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
+base_weight_path = os.path.join(base_path, 'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5  'models/model_frcnn.hdf5 
 config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+ '.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 1
-Earlystopping_patience= 100
+num_epochs = 200
+Earlystopping_patience= None
 
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
@@ -128,10 +135,11 @@ def oracle(pool,all_imgs,trainingsmenge):
                 all_bg,list_not_bg = utils.check_predict(pred[1])
                 if all_bg == True:
                     not_predict+=1
-                    print ("Model hat nur bg anerkannt")
+                    print ("Model hat nur bg anerkannt {}".format(not_predict))
                     continue
                 else:
                     for val in list_not_bg:
+                        print(" print val ")
                         print("________________Vorhergesagtete Klassen für das Bild : {}".format(ntpath.basename(el['filepath'])))                      
                         for cl in el['bboxes']:
                             if cl['class']== val[0]:
@@ -145,12 +153,12 @@ def oracle(pool,all_imgs,trainingsmenge):
                                 print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
                                 print("oracle: die Liste Von Objekt auf dem Bild ".format(cl['class']))
 
-    print("true positive:{}".format(truePositiv))
+    print("list of not bg: {} true positive:{} true negativ: {} and not predict: {}".format(len(list_not_bg),truePositiv, trueNegativ, not_predict))
     trainingsmenge = trainingsmenge + neue_seed
     return truePositiv, trueNegativ,not_predict,trainingsmenge,all_imgs
            
-def trian_simple():
-      
+def train_simple():
+    print("##################### simple Train #################################")
     con = train_vorbereitung()
     cur_loos = con.best_loss
     iteration = 0
@@ -165,8 +173,11 @@ def trian_simple():
         print("size of train data: {}".format(len(seed_imgs)))
         print("size of data reste data {}".format(len(all_imgs)))
         con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,Earlystopping_patience,config_output_filename)
-        print("size of data to predict {}".format(len(all_imgs)))
-        predict_list=test.make_predicton_new(all_imgs,con)
+        sizetopredict = int(round((len(all_imgs)* train_size_pro_batch)/100))
+        list_to_predict = all_imgs[:sizetopredict]
+        print("size of data to predict {}".format(len(list_to_predict)))
+        print("weight {}".format(con.best_loss))
+        predict_list=test.make_predicton_new(list_to_predict,con)
         print("Anwendung des Pool_based sampling")
         pool = utils.Pool_based_sampling_test(predict_list,to_Query,unsischerheit_methode)
         print("Abfrage an der Oracle")
@@ -190,62 +201,52 @@ def trian_simple():
             print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
             break
 
-""" def train_batch():
-    #Erstellung von Seed und unlabellierte Datenmege
-    #batchtify,classes_count,class_mapping = utils.create_batchify_from_path(pathToDataSet,batch_size)
-    #print(" Es gibt: ", len(batchtify), "Batch von je: ", len(batchtify[0]), " Bilder")
-    #batch_numb = 0 
+def train_Batch():
+    print("##################### Train on Batch ##############################")
     con = train_vorbereitung()
     cur_loos = con.best_loss
     iteration = 0
-    not_change = 0 
-    all_imgs,seed_imgs,class_mapping,classes_count,seed_classes_mapping,seed_classes_count = utils.createSeedPascal_Voc(pathToDataSet,batch_size)
-    # release gpu memory    
-    #test
-    #print("the next Batch: ", batch_numb)
-    print("size of train data: {}".format(len(seed_imgs)))
-    print("size of data reste data {}".format(len(all_imgs)))
-    while (len(all_imgs)!=0):
-        # train
-        #utils.reset_keras()
-        iteration += 1
-        start_time = time.time()
-        print("size of train data: {}".format(len(seed_imgs)))
-        print("size of data reste data {}".format(len(all_imgs)))
-        con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,num_epochs,Earlystopping_patience)
-        #test
-        #utils.reset_keras()
-        #utils.clear_keras()
-        #test = test.test_model(test_path,con)
-        # Anwendung des Models
-        pool = all_imgs[:to_Query]
-        all_imgs = all_imgs[to_Query:]
-        print("size of data to predict {}".format(len(pool)))
-        predict_list = make_prediction(unsischerheit_methode,pool,con)
-        # Query to Oracle: zurückgegeben wird anzahl der rictige vorhergesahte Klasse und die neue Trainingsmenge
-        print("Abfrage an der Oracle")
-        print("size of data {}".format(len(predict_list)))
-        truePositiv, trueNegativ,not_predict,seed_imgs = oracle(pool,predict_list,to_Query,unsischerheit_methode,seed_imgs)
-        # die batch-size Element, die von der Oracle überprüfen wurden,werden in der trainingsmenge übertragen       
-        #seed_imgs=pool_based_sampling(list_predict_sort,unsischerheit_methode)
-        seed_classes_count,seed_classes_mapping=utils.create_mapping_cls(seed_imgs)      
-        performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':cur_loos,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(predict_list),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
-        utils.appendDFToCSV_void(performamce,pathToPermformance)            
-        #Abbruch Krieterium
-        if cur_loos>con.best_loss:
-            # Verbesserung des Models 
-            print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(cur_loos,con.best_loss))
-            cur_loos = con.best_loss
-            con.base_net_weights = con.model_path
-            not_change = loos_not_change
-            con = utils.update_config_file(config_output_filename,con)
-            print("neue  base net weight: {}".format(con.base_net_weights))
-            not_change = 0                  
-        else:
-            not_change +=1     
-        if loos_not_change <= not_change:
-            print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
-            break """
+    not_change = 0
+    batch_number = 0
+    train_size_pro_batch = 40
+    print("base net {} and losse {} ".format(con.base_net_weights ,con.best_loss))
+    list_batch = utils.create_batch_from_path(pathToDataSet,batch_size)
+    for batch in list_batch:
+        all_imgs,seed_imgs,seed_classes_mapping,seed_classes_count = utils.createSeed_pro_batch(batch,train_size_pro_batch)
+        con.class_mapping = class_mapping
+        con = utils.update_config_file(config_output_filename,con)
+        while (len(all_imgs)!=0):
+            iteration += 1
+            start_time = time.time()
+            print("size of train data: {}".format(len(seed_imgs)))
+            print("size of data reste data {}".format(len(all_imgs)))
+            con = train.train_model(seed_imgs,seed_classes_count,seed_classes_mapping,con,Earlystopping_patience,config_output_filename)
+            predict_list=test.make_predicton_new(all_imgs,con)
+            print("Anwendung des Pool_based sampling")
+            pool = utils.Pool_based_sampling_test(predict_list,to_Query,unsischerheit_methode)
+            print("Abfrage an der Oracle")
+            print("size of data {}".format(to_Query))
+            truePositiv, trueNegativ,not_predict,seed_imgs,all_imgs = oracle(pool,all_imgs,seed_imgs)  
+            performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Batch':batch_number+1, 'Iteration':iteration,'Aktuelle_verlust':con.best_loss,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(pool),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
+            utils.appendDFToCSV_void(performamce,pathToPermformance)            
+            #Abbruch Krieterium
+            if con.best_loss<cur_loos:
+                # Verbesserung des Models 
+                print("das Model hat sich verbessert von: {} loos ist jetzt :{}".format(cur_loos,con.best_loss))
+                cur_loos=con.best_loss
+                con.base_net_weights = con.model_path
+                not_change = loos_not_change
+                con = utils.update_config_file(config_output_filename,con)
+                print("neue  base net weight: {}".format(con.base_net_weights))
+                not_change = 0                  
+            else:
+                not_change +=1     
+            if loos_not_change <= not_change:
+                print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
+                break
 if __name__ == "__main__":
-    trian_simple()
+    if train_mode == 'batch':
+        train_Batch()
+    else:
+        train_simple()
     
