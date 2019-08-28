@@ -4,12 +4,7 @@ Es wurde ein Keras Faster-RCNN (keras-frcnn) benuzt,die wurde geclont von https:
 
 USAGE:
 - Both theano and tensorflow backends are supported. However compile times are very high in theano, and tensorflow is highly recommended.
-- `active_learning_modul.py` can be used to train a model. To train on Pascal VOC data,
-    - python active_learning_modul.py argv1 argv2 argv3 agrv4 
-    - argv1 = /media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit corresponding to path to VOC2012 directory
-    - argv2 = name of perfomance csv file
-    - argv3 = name of model to save
-    - argv4 = train on batch/simple cloud be simple or batch default is simple   
+- `active_learning_modul.py` can be used to launch activlearning process like python active_learning_modul.py -p /home/kamgo/VOCdevkit -m batch -s margin --pool 200
 
 # test 
  to  test:
