@@ -37,10 +37,10 @@ pathToDataSet = sys.argv[1]
 #pathToDataSet= '/media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 base_path=os.getcwd()
 #test_path='/home/kamgo/test_image'
-pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
 #pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 #pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
 
+<<<<<<< HEAD
 #uncertainty sampling method
 unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
 batch_size =30 # Prozenzahl von Daten  pro batch_lement
@@ -49,6 +49,8 @@ to_Query = 300 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch
 
 loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung der Leistung
 
+=======
+>>>>>>> a9f73579b7ceec559875ef53007880b13bb97ccf
 seed_imgs =[]
 seed_classes_count={}
 seed_classes_mapping={}
@@ -61,6 +63,7 @@ class_mapping ={}
 horizontal_flips = True # Augment with horizontal flips in training. 
 vertical_flips = True   # Augment with vertical flips in training. 
 rot_90 = True           # Augment with 90 degree rotations in training. 
+<<<<<<< HEAD
 output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
 if sys.argv[4] == None:
     train_mode = 'simple'
@@ -72,10 +75,29 @@ base_weight_path = os.path.join(base_path, 'models/resnet50_weights_tf_dim_order
 config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+ '.pickle') #Location to store all the metadata related to the training (to be used when testing).
 num_epochs = 200
 Earlystopping_patience= None
+=======
 
+#record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
+base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
+
+output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
+config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+ '.pickle') #Location to store all the metadata related to the training (to be used when testing).
+pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
+>>>>>>> a9f73579b7ceec559875ef53007880b13bb97ccf
+
+num_epochs = 1000
+Earlystopping_patience= 50
 parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
 num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
+
+#uncertainty sampling method
+unsischerheit_methode = ['least_confident','margin','entropie'] #"margin" kann auch "least_confident oder "margin"
+batch_size =30 # Prozenzahl von Daten  pro batch_lement
+train_size_pro_batch = 50 # N-Prozen von batch-size element
+to_Query = 300 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+
+loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung der Leistung
 print("save hyperparameter")
 config_img = config.Config()
 
@@ -120,7 +142,7 @@ def train_vorbereitung ():
     return con
 
 def oracle(pool,all_imgs,trainingsmenge):
-
+    print("size of data {}".format(len(pool)))
     neue_seed =[]
     to_find = len(pool)
     truePositiv = 0 # das Model hat gut predict
@@ -130,6 +152,7 @@ def oracle(pool,all_imgs,trainingsmenge):
         for el in all_imgs:
             if ntpath.basename(el['filepath']) == ntpath.basename(pred[0]):
                 to_find-=1
+                print("----------> für das Bild {}".format(ntpath.basename(el['filepath'])))
                 neue_seed.append(el)
                 all_imgs.remove(el)
                 all_bg,list_not_bg = utils.check_predict(pred[1])
@@ -179,11 +202,10 @@ def train_simple():
         print("weight {}".format(con.best_loss))
         predict_list=test.make_predicton_new(list_to_predict,con)
         print("Anwendung des Pool_based sampling")
-        pool = utils.Pool_based_sampling_test(predict_list,to_Query,unsischerheit_methode)
+        pool = utils.Pool_based_sampling_test(predict_list,to_Query,method)
         print("Abfrage an der Oracle")
-        print("size of data {}".format(to_Query))
         truePositiv, trueNegativ,not_predict,seed_imgs,all_imgs = oracle(pool,all_imgs,seed_imgs)  
-        performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':con.best_loss,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(pool),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
+        performamce ={'unsischerheit_methode':method, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':con.best_loss,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(pool),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
         utils.appendDFToCSV_void(performamce,pathToPermformance)            
         #Abbruch Krieterium
         if con.best_loss<cur_loos:
@@ -245,8 +267,17 @@ def train_Batch():
                 print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
                 break
 if __name__ == "__main__":
+
+    """
+    for method in unsischerheit_methode:
+        output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+'_'+ method + '.hdf5')
+        config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+'_'+ method + '.pickle')
+        pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[3]+'_'+ method + '.csv')
+        trian_simple(method)
+    """
     if train_mode == 'batch':
         train_Batch()
     else:
         train_simple()
+
     

@@ -135,7 +135,7 @@ def sort_list_sampling(list,sampling_methode):
     elif (sampling_methode=="margin"):
         list = sorted(list,key=itemgetter(1))
     elif (sampling_methode=="least_confident"):
-        list = sberechnung_unsischerheitorted(list,key=itemgetter(1),reverse=True)
+        list = sorted(list,key=itemgetter(1),reverse=True)
     else:
         print("kein gültiges Uncertainty sampling")
     
@@ -257,7 +257,10 @@ def Pool_based_sampling_test (predict_list, pool_size ,sampling_methode):
         Predict_uncertainty_list.append((elt[0], elt[1],uncertainty))
 
     Predict_uncertainty_listsorted = sort_list_sampling(Predict_uncertainty_list,sampling_methode)
-    pool = pool = Predict_uncertainty_listsorted[:pool_size]
+    if pool_size > len(Predict_uncertainty_listsorted):
+        pool = Predict_uncertainty_listsorted[:pool_size]
+    else:
+        pool = Predict_uncertainty_listsorted
     return pool
 
 def appendDFToCSV_void(dictPerformance, csvFilePath):
@@ -311,6 +314,7 @@ if __name__ == "__main__":
     en = entropy_sampling(list_predict)
     lc = least_confident(list_predict)
     m = margin_sampling(list_predict)
+
     print("entropie is :{} least confident is {} and margin is {}".format(en,lc,m))
     #print(len(lt))
 
