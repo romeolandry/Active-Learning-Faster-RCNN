@@ -254,14 +254,6 @@ def train_Batch():
                 print("nach {} Trainingsiteration hat das Modle keine Verbesserung gamacht. Trainingsphase wird aufgehört: {}".format(not_change,loos_not_change))
                 break
 if __name__ == "__main__":
-
-    """
-    for method in unsischerheit_methode:
-        output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+'_'+ method + '.hdf5')
-        config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+'_'+ method + '.pickle')
-        pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[3]+'_'+ method + '.csv')
-        trian_simple(method)
-    """
     if train_mode == 'batch':
         train_Batch()
     else:
