@@ -29,79 +29,66 @@ import pickle
 import cv2
 from operator import itemgetter
 from numba import jit
+from optparse import OptionParser
 
-import random
-#random.seed( 30 )
-
-pathToDataSet = sys.argv[1]
-#pathToDataSet= '/media/romeo/Volume/dataset/VOCtrainval_11-May-2012/VOCdevkit'
 base_path=os.getcwd()
-#test_path='/home/kamgo/test_image'
-#pathToDataSet = '/media/kamgo/15663FCC59194FED/Activ Leaning/dataset/VOCtrainval_11-May-2012/VOCdevkit'
-#pathToSeed = '/home/kamgo/activ_lerning _object_dection/keras-frcnn/train_images' # pfad zum Seed: labellierte Datein, die zum training benutzen werden
+parser = OptionParser()
 
-<<<<<<< HEAD
+parser.add_option("-p", "--path", dest="pathToDataSet", help="Path to VOC2012")
+parser.add_option("-m", "--mode", dest="trainingsmode", help="simple / batch", default="simple")
+parser.add_option("-s", dest="sampling_method", help="cloud be [entropie, margin or least_confident]", default ="entropie")
+parser.add_option("--pool", dest="pool_size", help="number of image to query to oracle",default=300)
+parser.add_option("--seed", dest="seed_size", help="size of seed im percent",default=30)
+parser.add_option("--stop", dest="stopping", help="stop the active learning proces after n-Iteration without amelioration",default=20)
+parser.add_option("-e", "--epochs", dest="num_epochs", help="",default=1000)
+
+parser.add_option("-c", "--config_filename", dest="config_filename", help=
+				"Location to write the metadata related to the training (generated when training).",
+				default=os.path.join(base_path, 'models/out_model.pickle'))
+parser.add_option("--base_weight", dest="base_weight_path", help ="give the path of weight file",
+                default = os.path.join(base_path, 'models/model_frcnn.hdf5'))
+parser.add_option("--output_weight", dest="output_weight_path", help ="give the path of file save model",
+                default = os.path.join(base_path, 'models/out_model.hdf5'))
+parser.add_option("--perform", dest="pathToPermformance", help ="give the paht file to save performance",
+                default = os.path.join(base_path, 'performance/out_model.csv'))
+(options, args) = parser.parse_args()
+
+
+pathToDataSet = options.pathToDataSet
+base_weight_path = options.base_weight_path #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
+output_weight_path = options.output_weight_path
+config_output_filename = options.config_filename #Location to store all the metadata related to the training (to be used when testing).
+pathToPermformance = options.pathToPermformance
+train_mode = options.trainingsmode
+num_epochs = options.num_epochs
+
 #uncertainty sampling method
-unsischerheit_methode = "entropie" # kann auch "least_confident oder "margin"
-batch_size =30 # Prozenzahl von Daten  pro batch_lement
-train_size_pro_batch = 20 # N-Prozen von batch-size element
-to_Query = 300 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
+unsischerheit_methode = options.sampling_method
+batch_size = options.seed_size 
+to_Query =  options.pool_size  
+loos_not_change =options.stopping
 
-loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung der Leistung
 
-=======
->>>>>>> a9f73579b7ceec559875ef53007880b13bb97ccf
+
+Earlystopping_patience= None
+train_size_pro_batch = 50 # N-Prozen von batch-size element
+num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
+network = 'resnet50'# Base network to use. Supports vgg or resnet50
+
 seed_imgs =[]
 seed_classes_count={}
 seed_classes_mapping={}
 all_imgs =[]
-datatosendtoOracle=[]
 classes_count ={}
 class_mapping ={}
-
-# Augmentation flag
-horizontal_flips = True # Augment with horizontal flips in training. 
-vertical_flips = True   # Augment with vertical flips in training. 
-rot_90 = True           # Augment with 90 degree rotations in training. 
-<<<<<<< HEAD
-output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
-if sys.argv[4] == None:
-    train_mode = 'simple'
-else:
-    train_mode = sys.argv[4] # can be simple or batch
-
-#record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
-base_weight_path = os.path.join(base_path, 'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5  'models/model_frcnn.hdf5 
-config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+ '.pickle') #Location to store all the metadata related to the training (to be used when testing).
-num_epochs = 200
-Earlystopping_patience= None
-=======
-
-#record_path = os.path.join(base_path, 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
-base_weight_path = os.path.join(base_path, 'models/model_frcnn.hdf5') #Input path for weights. If not specified, will try to load default weights provided by keras.'models/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5' 
-
-output_weight_path = os.path.join(base_path, 'models/' + sys.argv[3]+ '.hdf5')
-config_output_filename = os.path.join(base_path, 'models/' + sys.argv[3]+ '.pickle') #Location to store all the metadata related to the training (to be used when testing).
-pathToPermformance = os.path.join(base_path, 'performance/'+ sys.argv[2]+'.csv')
->>>>>>> a9f73579b7ceec559875ef53007880b13bb97ccf
-
-num_epochs = 1000
-Earlystopping_patience= 50
-parser = 'simple' # kann pascal_voc oder Simple(für andere Dataset)
-num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
-network = 'resnet50'# Base network to use. Supports vgg or resnet50
-
-#uncertainty sampling method
-unsischerheit_methode = ['least_confident','margin','entropie'] #"margin" kann auch "least_confident oder "margin"
-batch_size =30 # Prozenzahl von Daten  pro batch_lement
-train_size_pro_batch = 50 # N-Prozen von batch-size element
-to_Query = 300 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
-
-loos_not_change = 20 # wie oft soll das weiter trainiert werden, ohne eine Verbesserung der Leistung
 print("save hyperparameter")
 config_img = config.Config()
 
 def train_vorbereitung ():
+    # Augmentation flag
+    horizontal_flips = True # Augment with horizontal flips in training. 
+    vertical_flips = True   # Augment with vertical flips in training. 
+    rot_90 = True           # Augment with 90 degree rotations in training. 
     con = config.Config()
 
     con.use_horizontal_flips = bool(horizontal_flips)
