@@ -60,7 +60,7 @@ output_weight_path = options.output_weight_path
 config_output_filename = options.config_filename #Location to store all the metadata related to the training (to be used when testing).
 pathToPermformance = options.pathToPermformance
 train_mode = options.trainingsmode
-num_epochs = options.num_epochs
+num_epochs = int(options.num_epochs)
 
 #uncertainty sampling method
 unsischerheit_methode = options.sampling_method
