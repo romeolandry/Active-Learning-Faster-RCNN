@@ -64,7 +64,7 @@ num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
 
 #uncertainty sampling method
-unsischerheit_methode = ['least_confident','margin'] #"margin" kann auch "least_confident oder "margin"
+unsischerheit_methode = ['least_confident','margin','entropie'] #"margin" kann auch "least_confident oder "margin"
 batch_size =30 # Prozenzahl von Daten  pro batch_lement
 train_size_pro_batch = 50 # N-Prozen von batch-size element
 to_Query = 300 # Anzahl von daten, die zu dem Oracle gesenden werden. auch batch for Pool-based sampling
