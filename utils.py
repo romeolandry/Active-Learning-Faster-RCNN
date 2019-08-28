@@ -257,7 +257,7 @@ def Pool_based_sampling_test (predict_list, pool_size ,sampling_methode):
         Predict_uncertainty_list.append((elt[0], elt[1],uncertainty))
 
     Predict_uncertainty_listsorted = sort_list_sampling(Predict_uncertainty_list,sampling_methode)
-    if pool_size > len(Predict_uncertainty_listsorted):
+    if pool_size < len(Predict_uncertainty_listsorted):
         pool = Predict_uncertainty_listsorted[:pool_size]
     else:
         pool = Predict_uncertainty_listsorted
