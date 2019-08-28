@@ -258,5 +258,3 @@ if __name__ == "__main__":
         train_Batch()
     else:
         train_simple()
-
-    

@@ -277,6 +277,7 @@ def appendDFToCSV_void(dictPerformance, csvFilePath):
 def writePerformanceModell(ModellParmeter, pathtofile):
         Perform = pd.DataFrame(ModellParmeter, index=[0])
         Perform.to_csv(pathtofile, sep=';', mode='a', header=False, index=False)
+
 def check_predict(list_pred):
     all_bg = False
     list_found_bg=0
@@ -284,6 +285,8 @@ def check_predict(list_pred):
     for el in list_pred:
         if el[0] == 'bg':
             list_found_bg+=1
+        else:
+            list_not_bg.append(el)
 
     if len(list_pred)== list_found_bg:
         all_bg = True
