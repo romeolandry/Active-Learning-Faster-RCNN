@@ -138,7 +138,7 @@ def oracle(pool,all_imgs,trainingsmenge):
     for pred in pool:
         for el in all_imgs:
             if ntpath.basename(el['filepath']) == ntpath.basename(pred[0]):
-                print("________________Vorhergesagtete Klassen für das Bild : {}".format(ntpath.basename(el['filepath'])))   
+                print("________________Vorhergesagtete Klassen für das Bild : {}".format(ntpath.basename(el['filepath'])))
                 to_find-=1
                 neue_seed.append(el)
                 all_imgs.remove(el)
@@ -150,16 +150,15 @@ def oracle(pool,all_imgs,trainingsmenge):
                 else:
                     for val in list_not_bg:                   
                         for cl in el['bboxes']:
+                            print("oracle: die Liste Von Objekt auf dem Bild {} ".format(cl['class']))
                             if cl['class']== val[0]:
-                                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
-                                print("oracle: die Liste Von Objekt auf dem Bild ".format(cl['class']))
                                 print("gut predicted!")
+                                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
                                 truePositiv +=1
                             else:
                                 print("falsch Predict")
                                 trueNegativ += 1
                                 print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
-                                print("oracle: die Liste Von Objekt auf dem Bild ".format(cl['class']))
 
     print("list of not bg: {} true positive:{} true negativ: {} and not predict: {}".format(len(list_not_bg),truePositiv, trueNegativ, not_predict))
     trainingsmenge = trainingsmenge + neue_seed
