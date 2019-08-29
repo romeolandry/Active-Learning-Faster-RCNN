@@ -293,6 +293,21 @@ def check_predict(list_pred):
 
     return all_bg,list_not_bg
 
+def check_truePositiv_trueNegativ (list_not_bg, list_class_oracle):
+    for val in list_not_bg:                   
+        for cl in el['bboxes']:
+            if cl['class']== val[0]:
+                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
+                print("oracle: die Liste Von Objekt auf dem Bild ".format(cl['class']))
+                print("gut predicted!")
+                truePositiv +=1
+            else:
+                print("falsch Predict")
+                trueNegativ += 1
+                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
+                print("oracle: die Liste Von Objekt auf dem Bild ".format(cl['class']))
+
+
 def update_config_file(pathtofile,con):
     print("update config file")
     with open(pathtofile, 'wb') as config_f:
