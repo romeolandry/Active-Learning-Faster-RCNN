@@ -64,14 +64,14 @@ num_epochs = int(options.num_epochs)
 
 #uncertainty sampling method
 unsischerheit_methode = options.sampling_method
-batch_size = options.seed_size 
-to_Query =  options.pool_size  
-loos_not_change =options.stopping
+batch_size = int(options.seed_size)
+to_Query =  int(options.pool_size)  
+loos_not_change =int(options.stopping)
 
 
 
 Earlystopping_patience= None
-train_size_pro_batch = 50 # N-Prozen von batch-size element
+train_size_pro_batch = 10 # N-Prozen von batch-size element
 num_rois = 32 # Number of RoIs to process at once default 32 I reduice it to 16.
 network = 'resnet50'# Base network to use. Supports vgg or resnet50
 
@@ -132,9 +132,10 @@ def oracle(pool,all_imgs,trainingsmenge):
     print("size of data {}".format(len(pool)))
     neue_seed =[]
     to_find = len(pool)
-    truePositiv = 0 # das Model hat gut predict
-    trueNegativ = 0 # das Model hat ein Objekt predict aber war falsch
+    truePositiv_all = 0 # das Model hat gut predict
+    trueNegativ_all = 0 # das Model hat ein Objekt predict aber war falsch
     not_predict =0 # das Model hat kein Objekt predict
+    match_list =[]
     for pred in pool:
         for el in all_imgs:
             if ntpath.basename(el['filepath']) == ntpath.basename(pred[0]):
@@ -142,27 +143,22 @@ def oracle(pool,all_imgs,trainingsmenge):
                 to_find-=1
                 neue_seed.append(el)
                 all_imgs.remove(el)
-                all_bg,list_not_bg = utils.check_predict(pred[1])
+                all_bg,list_not_bg,list_found_bg = utils.check_predict(pred[1])
+                not_predict = list_found_bg + not_predict
                 if all_bg == True:
-                    not_predict+=1
-                    print ("Model hat nur bg anerkannt {}".format(not_predict))
-                    continue
+                    print ("Model hat nur bg anerkannt")
                 else:
                     for val in list_not_bg:                   
                         for cl in el['bboxes']:
                             print("oracle: die Liste Von Objekt auf dem Bild {} ".format(cl['class']))
-                            if cl['class']== val[0]:
-                                print("gut predicted!")
-                                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
-                                truePositiv +=1
-                            else:
-                                print("falsch Predict")
-                                trueNegativ += 1
-                                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
+                            truePositiv,trueNegativ,match_list= utils.count_class_in_dict_oracle(val[0],el,list_not_bg,match_list)
+                            truePositiv_all = truePositiv_all+truePositiv
+                            trueNegativ_all = trueNegativ_all + trueNegativ
+                            print(" für dieses Bild hat das Model {} gut Vorhergesagt : {} falsh : dazu war  {} als background  ".format(truePositiv,trueNegativ,list_found_bg))
 
-    print("list of not bg: {} true positive:{} true negativ: {} and not predict: {}".format(len(list_not_bg),truePositiv, trueNegativ, not_predict))
+    print("total backgroun: {} : total true positive:{} total true negativ: {}".format(not_predict,truePositiv_all, trueNegativ_all))
     trainingsmenge = trainingsmenge + neue_seed
-    return truePositiv, trueNegativ,not_predict,trainingsmenge,all_imgs
+    return truePositiv_all, trueNegativ_all,not_predict,trainingsmenge,all_imgs
            
 def train_simple():
     print("##################### simple Train #################################")
@@ -185,11 +181,12 @@ def train_simple():
         print("size of data to predict {}".format(len(list_to_predict)))
         print("weight {}".format(con.best_loss))
         predict_list=test.make_predicton_new(list_to_predict,con)
+        #input("press key to continue....")
         print("Anwendung des Pool_based sampling")
         pool = utils.Pool_based_sampling_test(predict_list,to_Query,unsischerheit_methode)
-        print("Abfrage an der Oracle")
+        print("Abfrage an dem Oracle")
         truePositiv, trueNegativ,not_predict,seed_imgs,all_imgs = oracle(pool,all_imgs,seed_imgs)  
-        performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Iteration':iteration,'Aktuelle_verlust':con.best_loss,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(pool),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
+        performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size,'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time, 'Iteration':iteration,'Aktuelle_verlust':con.best_loss,'seed':len(seed_imgs),'batch_to_predict':len(predict_list),'to_Query':len(pool),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
         utils.appendDFToCSV_void(performamce,pathToPermformance)            
         #Abbruch Krieterium
         if con.best_loss<cur_loos:
@@ -230,11 +227,10 @@ def train_Batch():
             predict_list=test.make_predicton_new(all_imgs,con)
             print("Anwendung des Pool_based sampling")
             pool = utils.Pool_based_sampling_test(predict_list,to_Query,unsischerheit_methode)
-            print("Abfrage an der Oracle")
-            print("size of data {}".format(to_Query))
+            print("Abfrage an dem Oracle")
             truePositiv, trueNegativ,not_predict,seed_imgs,all_imgs = oracle(pool,all_imgs,seed_imgs)  
-            performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size, 'Batch':batch_number+1, 'Iteration':iteration,'Aktuelle_verlust':con.best_loss,'seed':len(seed_imgs),'batch_size':batch_size,'to_Query':to_Query, 'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time,'Anzahl der vorhergesagteten Bildern':len(pool),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
-            utils.appendDFToCSV_void(performamce,pathToPermformance)            
+            performamce ={'unsischerheit_methode':unsischerheit_methode, 'num_roi':num_rois, 'img_size':config_img.im_size,'num_epochs':num_epochs ,'abgelaufene Zeit':time.time() - start_time, 'Iteration':iteration,'Aktuelle_verlust':con.best_loss,'seed':len(seed_imgs),'batch_to_predict':len(predict_list),'to_Query':len(pool),'Good predicted':truePositiv,'Falsh_predicted':trueNegativ,'not_prediction':not_predict,}
+            utils.appendDFToCSV_void(performamce,pathToPermformance)             
             #Abbruch Krieterium
             if con.best_loss<cur_loos:
                 # Verbesserung des Models 

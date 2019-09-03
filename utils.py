@@ -205,9 +205,11 @@ def createSeedPascal_Voc(pathToDataSet,batch_size):
     classes_count ={}
     class_mapping ={}
     all_imgs, classes_count, class_mapping = get_data(pathToDataSet)
+    print("len all_image after get_data in {}".format(len(all_imgs)))
     sizetotrain = int(round((len(all_imgs)* batch_size)/100))
     seed_imgs = all_imgs[:sizetotrain]
     all_imgs = all_imgs[sizetotrain:]
+    print("len all_image after get train_menge {}".format(len(all_imgs)))
     print("Erstellung anotation, class_maping und class_count vom Seed")
     for seed in seed_imgs:
         for bb in seed['bboxes']:
@@ -291,48 +293,76 @@ def check_predict(list_pred):
     if len(list_pred)== list_found_bg:
         all_bg = True
 
-    return all_bg,list_not_bg
-
-def check_truePositiv_trueNegativ (list_not_bg, list_class_oracle):
-    for val in list_not_bg:                   
-        for cl in el['bboxes']:
-            if cl['class']== val[0]:
-                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
-                print("oracle: die Liste Von Objekt auf dem Bild ".format(cl['class']))
-                print("gut predicted!")
-                truePositiv +=1
-            else:
-                print("falsch Predict")
-                trueNegativ += 1
-                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
-                print("oracle: die Liste Von Objekt auf dem Bild ".format(cl['class']))
-
+    return all_bg,list_not_bg,list_found_bg
 
 def update_config_file(pathtofile,con):
     print("update config file")
     with open(pathtofile, 'wb') as config_f:
         pickle.dump(con, config_f)  
     return con
+
+def count_class_in_dict_oracle (classname, dict_oracle, list_prediction, match_list):
+    count_in_dict_orcal =0
+    count_in_prediction_list =0
+    truePositiv = 0
+    trueNegativ = 0
+    found = False
+    for c in match_list:
+        if c == classname:
+            found = True
+            break
+    if found == False:
+        match_list.append(classname)
+        for cl in dict_oracle['bboxes']:
+                if cl['class']== classname:
+                    count_in_dict_orcal +=1
+        for val in list_prediction:                   
+            if classname == val[0]:
+                count_in_prediction_list +=1
+    if count_in_prediction_list != 0 :
+        check = count_in_prediction_list - count_in_dict_orcal
+        if check == 0:
+            truePositiv = count_in_dict_orcal
+            trueNegativ = 0
+        else:
+            trueNegativ = abs(check)
+            if count_in_prediction_list < count_in_dict_orcal:
+                truePositiv = count_in_prediction_list
+            else:
+                truePositiv = count_in_dict_orcal
+
+    return truePositiv,trueNegativ,match_list
+
+    
+
+
+
 if __name__ == "__main__":
 
-    #base_path=os.getcwd()
-    #test_path='/home/kamgo/test_image'
-    #pathToPermformance = os.path.join(base_path, 'performance/performance.csv')
-    #print(pathToPermformance)
-    #performamce ={'unsischerheit_methode':5,'Iteration':3,'Aktuelle Ungenaueheit':3,'abgelaufene Zeit':62,'Anzahl der vorhergesagteten Bildern':6,'Gut predicted':8}
-    #appendDFToCSV_void(performamce,pathToPermformance)
-    d1=[]
-    d2=[]
-    list_predict1 =[('bg', 0.9), ('bg', 0.09), ('bg', 0.01)]
-    en1 = entropy_sampling(list_predict)
-    lc1 = least_confident(list_predict)
-    m1 = margin_sampling(list_predict)
-    d1.append(()) 
-    list_predict =[('bg', 0.2), ('bg', 0.5), ('bg', 0.3)]
-    en = entropy_sampling(list_predict)
-    lc = least_confident(list_predict)
-    m = margin_sampling(list_predict)
+    prediction = [('tvmonitor', 100.0), ('tvmonitor', 100.0), ('person', 100.0), ('person', 100.0), ('tvmonitor', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0), ('bg', 100.0)] 
+    oracle ={'filepath': '/mnt/0CCCB718CCB6FB52/dataset/VOCtrainval_11-May-2012/VOCdevkit/VOC2012/JPEGImages/2010_005372.jpg', 'width': 375, 'height': 500, 'bboxes': [{'class': 'chair', 'x1': 66, 'x2': 225, 'y1': 311, 'y2': 500, 'difficult': False}, {'class': 'tvmonitor', 'x1': 157, 'x2': 242, 'y1': 236, 'y2': 318, 'difficult': False}], 'imageset': 'trainval'}  
+    all_bg,list_not_bg,list_found_bg = check_predict(prediction)
+    print(all_bg)
+    print(list_not_bg)
+    truePositiv_all =0
+    trueNegativ_all = 0
+    match_list =[]
+    for val in list_not_bg:    
+        for cl in oracle['bboxes']:                  
+            print("oracle: die Liste Von Objekt auf dem Bild: {} ".format(cl['class']))
+            truePositiv,trueNegativ,match_list= count_class_in_dict_oracle(val[0],oracle,list_not_bg,match_list)
+            truePositiv_all = truePositiv_all+truePositiv
+            trueNegativ_all = trueNegativ_all + trueNegativ
+            print("{} : {} : {} ".format(truePositiv,trueNegativ,match_list))
 
-    print("entropie is :{} least confident is {} and margin is {}".format(en,lc,m))
-    #print(len(lt))
+            """ if cl['class']== val[0]:
+                print("gut predicted!")
+                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1]))
+                truePositiv +=1
+            else:
+                print("falsch Predict")
+                trueNegativ += 1
+                print("das Model predict : {} mit {} % Sicherheit".format(val[0],val[1])) """
+
+    print("true positive:{} true negativ: {}  bd {}/{} ".format(truePositiv_all, trueNegativ_all, list_found_bg,len(prediction)))
 
