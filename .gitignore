@@ -136,4 +136,6 @@ logs/*
 #my computer workspace
 .vscode
 AL_keras.code-workspace
+#python env
+pyp36_AL/
 
